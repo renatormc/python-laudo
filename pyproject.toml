@@ -1,5 +1,5 @@
 [project]
-name = "docmd"
+name = "laudo"
 version = "0.1.0"
 description = "Convert markdown files to docx or pdf using docxtpl templates"
 readme = "README.md"
@@ -8,17 +8,25 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "click>=8.1",
     "docxtpl[subdoc]>=0.20.2",
+    "PieXif>=1.1",
+    "Pillow>=10.0",
+    "PySide6>=6.6",
 ]
 
 [project.scripts]
-docmd = "docmd.__main__:main"
+laudo = "laudo.__main__:main"
 
 [dependency-groups]
 dev = [
     "mypy>=1.20.2",
     "pytest>=8.0",
+    "types-pillow",
 ]
+
+[tool.mypy]
+ignore_missing_imports = true
 
 [build-system]
 requires = ["uv_build>=0.10.8,<0.11.0"]

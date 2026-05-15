@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from docmd.core import _build_context, render_docx
+from laudo.core import _build_context, render_docx
 
 
 def test_build_context_empty(tmp_path: Path):
@@ -41,21 +41,25 @@ def test_build_context_context_txt_skips_invalid(tmp_path: Path):
     assert ctx == {"valid": "yes", "key": "value"}
 
 
-def test_build_context_assets(sample_project: Path):
+def test_build_context_pics(sample_project: Path, monkeypatch):
+    monkeypatch.chdir(sample_project)
     ctx = _build_context(sample_project)
-    assets = ctx["assets"]
-    assert isinstance(assets, dict)
-    assert set(assets.keys()) == {"logo", "photo"}
-    assert assets["logo"]["caption"] == ""
-    assert assets["logo"]["path"].name == "logo.png"
+    pics = ctx["pics"]
+    assert isinstance(pics, dict)
+    assert set(pics.keys()) == {"logo", "photo"}
+    assert pics["logo"]["caption"] == ""
+    assert pics["logo"]["path"].name == "logo.png"
+    assert pics["logo"]["thumb"] is not None
+    assert pics["logo"]["thumb"].is_file()
+    assert pics["logo"]["reduced"] is not None
 
 
-def test_build_context_no_assets(tmp_path: Path):
+def test_build_context_no_fotos(tmp_path: Path):
     folder = tmp_path / "proj"
     folder.mkdir()
     (folder / "readme.md").write_text("# Hi", encoding="utf-8")
     ctx = _build_context(folder)
-    assert "assets" not in ctx
+    assert "pics" not in ctx
 
 
 def test_render_docx(template_path: Path, tmp_path: Path):

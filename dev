@@ -20,7 +20,7 @@ case "${1:-help}" in
         ;;
     run)
         shift
-        exec uv run docmd "$@"
+        exec uv run laudo "$@"
         ;;
     *)
         echo "Usage: $0 <command> [args...]"
@@ -30,7 +30,7 @@ case "${1:-help}" in
         echo "  sync         Sync dependencies"
         echo "  build        Build package (sdist + wheel)"
         echo "  publish      Upload to PyPI"
-        echo "  run [args]   Run docmd CLI"
+        echo "  run [args]   Run laudo CLI"
         exit 1
         ;;
 esac

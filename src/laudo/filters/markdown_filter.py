@@ -1,17 +1,20 @@
+from __future__ import annotations
+
 from docx import Document
 from docx.shared import Pt
 import re
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from docmd.core import RenderEnv
+    from docxtpl import Subdoc
+    from laudo.core import RenderEnv
 from uuid import uuid4
 
 
 class MarkdownFilter:
-    def __init__(self, renv: 'RenderEnv'):
+    def __init__(self, renv: RenderEnv):
         self.jenv = renv
 
-    def __call__(self, md_text: str):
+    def __call__(self, md_text: str) -> Subdoc:
         tempdocx = self.jenv.temp_folder / f"{uuid4().hex}.docx"
 
   

@@ -1,3 +1,4 @@
+import os
 import shutil
 import tempfile
 from dataclasses import dataclass
@@ -6,7 +7,6 @@ from pathlib import Path
 from docxtpl import DocxTemplate
 from jinja2 import Environment, Template
 
-from .assets import collect_assets
 from .filters import register as register_filters
 from .globals import register as register_globals
 
@@ -37,9 +37,27 @@ def _build_context(folder: Path) -> dict:
         content = Template(content).render(ctx_vars)
         ctx_vars[key] = content
 
-    assets_path = folder / "assets"
-    if assets_path.is_dir():
-        ctx_vars["assets"] = collect_assets(assets_path)
+    from .exif import get_caption as _get_exif_caption
+    from .images import _IMAGE_EXTENSIONS, get_reduced, get_thumbnail
+
+    fotos = folder / "fotos"
+    if fotos.is_dir():
+        cwd = Path.cwd()
+        os.chdir(str(folder))
+        try:
+            pics: dict[str, dict] = {}
+            for img in sorted(fotos.iterdir()):
+                if img.is_file() and img.suffix.lower() in _IMAGE_EXTENSIONS:
+                    name = img.stem
+                    pics[name] = {
+                        "path": img,
+                        "caption": _get_exif_caption(img),
+                        "thumb": get_thumbnail(name),
+                        "reduced": get_reduced(name),
+                    }
+            ctx_vars["pics"] = pics
+        finally:
+            os.chdir(str(cwd))
 
     return ctx_vars
 
@@ -51,7 +69,7 @@ class RenderEnv:
     assets_folder: Path
 
 def render_docx(template_path: Path, context: dict, output_path: Path) -> Path:
-    temp_folder = Path(tempfile.mkdtemp(prefix="docmd_"))
+    temp_folder = Path(tempfile.mkdtemp(prefix="laudo_"))
     renv = RenderEnv(
         tpl=DocxTemplate(str(template_path)),
         jinja_env=Environment(),
@@ -68,13 +86,18 @@ def render_docx(template_path: Path, context: dict, output_path: Path) -> Path:
         shutil.rmtree(temp_folder, ignore_errors=True)
 
 
-def run(folder: Path, output: Path) -> Path:
+def run(folder: Path, output: Path, *, debug: bool = False) -> Path:
     template_path = folder / "template.docx"
     if not template_path.is_file():
         
         raise FileNotFoundError(f"template.docx not found in {folder}")
 
     context = _build_context(folder)
+    if debug:
+        import pprint
+        print("--- context ---")
+        pprint.pprint(context, indent=2, sort_dicts=False)
+        print("---------------")
 
     if output.suffix == ".pdf":
         docx_path = output.with_suffix(".docx")

@@ -1,16 +1,20 @@
-# docmd
+# laudo
 
 Convert markdown files to **docx** or **pdf** using `docxtpl` templates and LibreOffice headless.
 
 ## Architecture
 
 ```
-src/docmd/
+src/laudo/
 ├── __init__.py          # Public API: convert()
-├── __main__.py          # CLI entry point (argparse)
+├── __main__.py          # CLI entry point (click)
 ├── core.py              # Core conversion logic
 ├── assets.py            # Asset (image) handling
-├── filters.py           # Custom Jinja2 filters (markdown, etc.)
+├── exif.py              # EXIF caption read/write
+├── images.py            # Image listing, thumbnails, reduced
+├── filters/             # Custom Jinja2 filters (markdown, etc.)
+├── globals/             # Jinja2 globals (subdoc)
+├── gui/                 # PySide6 caption editor
 └── pdf.py               # PDF export via LibreOffice
 ```
 
@@ -30,7 +34,7 @@ The `folder` parameter must contain:
 ```
 my_project/
 ├── template.docx          # docxtpl template with Jinja2 placeholders
-├── assets/                # Images to embed
+├── fotos/                 # Images with captions (EXIF)
 │   ├── image1.png
 │   └── image2.jpg
 ├── context.txt            # (optional) Variables one per line: varname = value
@@ -54,11 +58,12 @@ All data below is merged and passed to `docxtpl.DocxTemplate.render()`:
 - The variable name is the filename without extension, with whitespace replaced by underscores.
 - Example: `intro.md` → context key `intro`, `chapter 1.md` → context key `chapter_1`.
 
-### From assets folder
-- All files inside `assets/` are listed.
-- A context variable `assets` is created as a `dict[str, dict]`.
-- Key: filename without extension. Value: `{"path": Path, "caption": ""}`.
-- `caption` is empty for now (future: read from EXIF metadata).
+### From fotos folder
+- All image files inside `fotos/` are listed.
+- A context variable `pics` is created as a `dict[str, dict]`.
+- Key: filename without extension. Value: `{"path": Path, "caption": str, "thumb": Path, "reduced": Path}`.
+- `caption` is read from EXIF `ImageDescription` via `exif.py`.
+- `thumb` and `reduced` are generated on demand via `images.py`.
 
 ### `subdoc` global function
 
@@ -79,14 +84,19 @@ Example template usage:
 
 ## CLI (`__main__.py`)
 
-Uses **argparse**:
+Uses **click**:
 
 ```bash
-docmd <folder> <output>
+laudo [--dir <folder>] [--gui]
 ```
 
-- `<folder>` — path to the input folder (see structure above).
-- `<output>` — output file (`.docx` for docx, `.pdf` for pdf).
+- `--dir <folder>` — working directory (default: current directory).
+- `--gui` — open the caption editor (PySide6).
+- `--install` — install the `laudo` wrapper script to `~/.local/bin/`.
+
+## GUI (`gui/`)
+
+A PySide6 caption editor that displays all images from `fotos/` as thumbnails with a text field for each caption. Captions are saved to EXIF `ImageDescription` via `exif.py`.
 
 ## Conventions
 
@@ -105,7 +115,8 @@ docmd <folder> <output>
 
 ## Commands
 
-- `uv run docmd <folder> <output>` — run the CLI
+- `uv run laudo <folder> <output>` — run the CLI
+- `uv run laudo --gui` — open the caption editor
 - `uv add <pkg>` — add a dependency
 - `uv sync` — sync environment
 - `uv run pytest` — run all tests

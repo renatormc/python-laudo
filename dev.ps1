@@ -21,7 +21,7 @@ switch ($command) {
         uv publish @rest
     }
     "run" {
-        uv run docmd @rest
+        uv run laudo @rest
     }
     default {
         Write-Host "Usage: $($MyInvocation.MyCommand.Name) <command> [args...]"
@@ -31,7 +31,7 @@ switch ($command) {
         Write-Host "  sync         Sync dependencies"
         Write-Host "  build        Build package (sdist + wheel)"
         Write-Host "  publish      Upload to PyPI"
-        Write-Host "  run [args]   Run docmd CLI"
+        Write-Host "  run [args]   Run laudo CLI"
         exit 1
     }
 }

@@ -1,11 +1,11 @@
-# docmd
+# laudo
 
 Convert markdown files to **docx** or **pdf** using `docxtpl` templates and LibreOffice headless.
 
 ## Installation
 
 ```bash
-pip install docmd
+pip install laudo
 ```
 
 Requires **Python 3.13+** and **LibreOffice** installed system-wide for PDF output.
@@ -15,7 +15,7 @@ Requires **Python 3.13+** and **LibreOffice** installed system-wide for PDF outp
 ### CLI
 
 ```bash
-docmd <folder> <output>
+laudo <folder> <output>
 ```
 
 - `<folder>` — directory with your project files.
@@ -24,7 +24,7 @@ docmd <folder> <output>
 ### Python API
 
 ```python
-from docmd import convert
+from laudo import convert
 
 convert("my_project/", "output.docx")
 convert("my_project/", "output.pdf")
@@ -35,7 +35,7 @@ convert("my_project/", "output.pdf")
 ```
 my_project/
 ├── template.docx          # docxtpl template with Jinja2 placeholders
-├── assets/                # Images to embed
+├── fotos/                 # Images with captions (EXIF)
 │   ├── logo.png
 │   └── photo.jpg
 ├── context.txt            # (optional) Variables one per line
@@ -95,25 +95,25 @@ Use the `markdown` filter in your template:
 {{p intro|markdown }}
 ```
 
-### Assets
+### Fotos
 
-All files inside `assets/` are listed in the `assets` context variable:
+All image files inside `fotos/` are listed in the `pics` context variable:
 
 ```json
 {
-  "logo": {"path": "assets/logo.png", "caption": ""},
-  "photo": {"path": "assets/photo.jpg", "caption": ""}
+  "logo": {"path": "fotos/logo.png", "caption": "", "thumb": "fotos/.thumbs/logo_thumb.jpg", "reduced": "fotos/.thumbs/logo_reduced.jpg"},
+  "photo": {"path": "fotos/photo.jpg", "caption": "", "thumb": "fotos/.thumbs/photo_thumb.jpg", "reduced": "fotos/.thumbs/photo_reduced.jpg"}
 }
 ```
 
-Captions are empty for now (future: read from EXIF metadata).
+Captions are read from EXIF `ImageDescription` metadata.
 
 ## PDF Output
 
 When the output path ends with `.pdf`, a docx is generated first and then converted to PDF via LibreOffice headless:
 
 ```bash
-docmd my_project/ output.pdf
+laudo my_project/ output.pdf
 ```
 
 The intermediate docx file is automatically removed.

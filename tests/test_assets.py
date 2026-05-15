@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from docmd.assets import collect_assets
+from laudo.assets import collect_assets
 
 
 def test_collect_assets_empty(tmp_path: Path):

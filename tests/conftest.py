@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+from PIL import Image
 from docx import Document
 
 
@@ -25,9 +26,9 @@ def sample_project(tmp_path: Path) -> Path:
     (folder / "chapter 1.md").write_text("## Chapter One\nContent here.", encoding="utf-8")
     (folder / "context.txt").write_text("author = John Doe\ntitle = My Doc\n", encoding="utf-8")
 
-    assets = folder / "assets"
-    assets.mkdir()
-    (assets / "logo.png").touch()
-    (assets / "photo.jpg").touch()
+    fotos = folder / "fotos"
+    fotos.mkdir()
+    Image.new("RGB", (100, 100)).save(str(fotos / "logo.png"))
+    Image.new("RGB", (200, 150)).save(str(fotos / "photo.jpg"))
 
     return folder
