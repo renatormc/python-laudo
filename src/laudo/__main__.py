@@ -21,7 +21,7 @@ def _install() -> None:
     script = bindir / "laudo"
     project_root = _find_project_root()
     content = f"""#!/usr/bin/env bash
-exec uv run --directory {project_root} laudo "$@"
+exec uv run --project {project_root} laudo "$@"
 """
     script.write_text(content.lstrip())
     script.chmod(script.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)

@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from .filters import rgano
+from .filters import Filters
 from laudo.filters.markdown_filter import MarkdownFilter
 if TYPE_CHECKING:
     from laudo.core import RenderEnv
@@ -8,4 +8,10 @@ if TYPE_CHECKING:
 
 def register(rend: 'RenderEnv') -> None:
     rend.jinja_env.filters["markdown"] = MarkdownFilter(rend)
-    rend.jinja_env.filters["rgano"] = rgano
+    fs = Filters()
+    for name in dir(fs):
+        if not name.startswith("_"):
+            method = getattr(fs, name)
+            if callable(method):
+                rend.jinja_env.filters[name] = method
+    

@@ -3,9 +3,11 @@ import shutil
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-
+import json
 from docxtpl import DocxTemplate
 from jinja2 import Environment, Template
+
+from laudo.reference_replacer import DocxReferenceReplacer
 
 from .filters import register as register_filters
 from .globals import register as register_globals
@@ -31,11 +33,17 @@ def _parse_context_txt(folder: Path) -> dict:
 def _build_context(folder: Path) -> dict:
     ctx_vars = _parse_context_txt(folder)
 
+    for json_file in sorted(folder.glob("*.json")):
+        key = json_file.stem.replace(" ", "_")
+        content = json_file.read_text(encoding="utf-8")
+        ctx_vars[key] = json.loads(content)
+
     for md_file in sorted(folder.glob("*.md")):
         key = md_file.stem.replace(" ", "_")
         content = md_file.read_text(encoding="utf-8")
         content = Template(content).render(ctx_vars)
         ctx_vars[key] = content
+   
 
     from .exif import get_caption as _get_exif_caption
     from .images import _IMAGE_EXTENSIONS, get_reduced, get_thumbnail
@@ -45,16 +53,17 @@ def _build_context(folder: Path) -> dict:
         cwd = Path.cwd()
         os.chdir(str(folder))
         try:
-            pics: dict[str, dict] = {}
+            pics: list[dict] = []
             for img in sorted(fotos.iterdir()):
                 if img.is_file() and img.suffix.lower() in _IMAGE_EXTENSIONS:
-                    name = img.stem
-                    pics[name] = {
+                    pics.append({
+                        "refname": img.stem,
                         "path": img,
                         "caption": _get_exif_caption(img),
-                        "thumb": get_thumbnail(name),
-                        "reduced": get_reduced(name),
-                    }
+                        "thumb": get_thumbnail(img.stem),
+                        "reduced": get_reduced(img.stem),
+                        "label": "Foto"
+                    })
             ctx_vars["pics"] = pics
         finally:
             os.chdir(str(cwd))
@@ -68,7 +77,7 @@ class RenderEnv:
     temp_folder: Path
     assets_folder: Path
 
-def render_docx(template_path: Path, context: dict, output_path: Path) -> Path:
+def render_docx(template_path: Path, context: dict, output_path: Path, replace_references=True) -> Path:
     temp_folder = Path(tempfile.mkdtemp(prefix="laudo_"))
     renv = RenderEnv(
         tpl=DocxTemplate(str(template_path)),
@@ -80,6 +89,9 @@ def render_docx(template_path: Path, context: dict, output_path: Path) -> Path:
         register_filters(renv)
         register_globals(renv)
         renv.tpl.render(context, jinja_env=renv.jinja_env)
+        if replace_references:
+            dr = DocxReferenceReplacer()
+            dr.replace_in_doc(renv.tpl.docx)
         renv.tpl.save(str(output_path))
         return output_path
     finally:
@@ -88,11 +100,14 @@ def render_docx(template_path: Path, context: dict, output_path: Path) -> Path:
 
 def run(folder: Path, output: Path, *, debug: bool = False) -> Path:
     template_path = folder / "template.docx"
+    print(template_path)
     if not template_path.is_file():
-        
-        raise FileNotFoundError(f"template.docx not found in {folder}")
+        raise FileNotFoundError(f"template.docx not found in project folder or in package templates")
 
-    context = _build_context(folder)
+    context_folder = folder / "context"
+    if not context_folder.is_dir():
+        context_folder = folder
+    context = _build_context(context_folder)
     if debug:
         import pprint
         print("--- context ---")
