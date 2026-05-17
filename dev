@@ -18,11 +18,7 @@ case "${1:-help}" in
     publish)
         exec uv publish
         ;;
-    run)
-        shift
-        exec uv run laudo "$@"
-        ;;
-    *)
+    help)
         echo "Usage: $0 <command> [args...]"
         echo
         echo "Commands:"
@@ -32,5 +28,8 @@ case "${1:-help}" in
         echo "  publish      Upload to PyPI"
         echo "  run [args]   Run laudo CLI"
         exit 1
+        ;;
+    *)
+        exec uv run laudo "$@"
         ;;
 esac

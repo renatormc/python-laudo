@@ -55,11 +55,11 @@ def _cmd_install() -> None:
                 print(f"  {path_hint}")
 
 
-def _cmd_gen(dir_: Path | None, debug: bool) -> None:
+def _cmd_gen(dir_: Path | None, debug: bool, pdf: bool) -> None:
     if dir_ is not None:
         os.chdir(str(dir_))
     folder = Path.cwd()
-    output = folder / "laudo.docx"
+    output = folder / "laudo.docx" if not pdf else folder / "laudo.pdf"
     result = convert(folder, output, debug=debug)
     print(f"Generated: {result}")
 
@@ -88,6 +88,7 @@ def main() -> None:
     gen_p = sub.add_parser("gen", help="Generate docx/pdf from markdown files.")
     gen_p.add_argument("--dir", type=_existing_dir, default=None, help="Working directory (default: current directory)")
     gen_p.add_argument("--debug", action="store_true", help="Print the template context before rendering")
+    gen_p.add_argument("--pdf", action="store_true", help="Generate PDF instead of DOCX (requires pandoc)")
 
     cap_p = sub.add_parser("captions", help="Open the caption editor GUI.")
     cap_p.add_argument("--dir", type=_existing_dir, default=None, help="Working directory (default: current directory)")
@@ -104,7 +105,7 @@ def main() -> None:
         case "install":
             _cmd_install()
         case "gen":
-            _cmd_gen(args.dir, args.debug)
+            _cmd_gen(args.dir, args.debug, args.pdf)
         case "captions":
             _cmd_captions(args.dir)
 

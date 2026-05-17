@@ -117,7 +117,6 @@ def render_docx(template_path: Path, context: dict, output_path: Path, replace_r
 
 def run(folder: Path, output: Path, *, debug: bool = False) -> Path:
     template_path = folder / "template.docx"
-    print(template_path)
     if not template_path.is_file():
         raise FileNotFoundError(f"template.docx not found in project folder or in package templates")
 
@@ -135,7 +134,7 @@ def run(folder: Path, output: Path, *, debug: bool = False) -> Path:
         from .pdf import convert_to_pdf
 
         result = convert_to_pdf(docx_path, output)
-        # docx_path.unlink()
+        docx_path.unlink()
         return result
 
     return render_docx(template_path, context, output)
