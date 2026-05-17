@@ -12,11 +12,11 @@ case "${1:-help}" in
     sync)
         exec uv sync
         ;;
-    build)
-        exec uv build
-        ;;
     publish)
-        exec uv publish
+        echo "Building package..."
+        uv build
+        echo "Publishing to PyPI..."
+        uv publish
         ;;
     help)
         echo "Usage: $0 <command> [args...]"
@@ -24,7 +24,6 @@ case "${1:-help}" in
         echo "Commands:"
         echo "  test         Run tests (passes extra args to pytest)"
         echo "  sync         Sync dependencies"
-        echo "  build        Build package (sdist + wheel)"
         echo "  publish      Upload to PyPI"
         echo "  run [args]   Run laudo CLI"
         exit 1

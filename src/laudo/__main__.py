@@ -28,7 +28,7 @@ def _cmd_install() -> None:
         path_sep = ";"
         path_hint = f"$env:Path = \"{bindir};$env:Path\""
     else:
-        script = bindir / "laudo"
+        script = bindir / "laudo-dev"
         content = f"#!/usr/bin/env bash\nexec uv run --project {project_root} laudo \"$@\"\n"
         script.write_text(content.lstrip())
         script.chmod(script.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
