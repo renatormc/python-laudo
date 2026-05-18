@@ -142,13 +142,16 @@ def render_doc(template_path: Path, context: dict, output_path: Path, replace_re
 
 
 
-def run(folder: Path, output: Path, *, debug: bool = False) -> Path:
-    template_path = folder / "template.docx"
-    if not template_path.is_file():
-        template_path = folder / "template.odt"
+def gen_laudo(folder: Path, output: Path, *, debug: bool = False, template: Path | None = None) -> Path:
+    if template is not None:
+        template_path = template
+    else:
+        template_path = folder / "template.docx"
         if not template_path.is_file():
-            raise FileNotFoundError(f"template.docx or template.odt not found in project folder or in package templates")
-        
+            template_path = folder / "template.odt"
+            if not template_path.is_file():
+                raise FileNotFoundError(f"template.docx or template.odt not found in project folder or in package templates")
+            
     output = output.with_suffix(template_path.suffix)
 
     context = _build_context(folder)
