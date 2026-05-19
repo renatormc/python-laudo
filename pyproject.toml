@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 [project]
 name = "laudo"
 version = "0.1.2"
@@ -51,3 +52,58 @@ ignore_missing_imports = true
 [build-system]
 requires = ["uv_build>=0.11.14,<0.12.0"]
 build-backend = "uv_build"
+=======
+[project]
+name = "laudo"
+version = "0.1.2"
+description = "Generate forensic report using docxtpl templates"
+readme = "README.md"
+authors = [
+    { name = "renatormc", email = "renatomartinsrmc@gmail.com" }
+]
+requires-python = ">=3.13"
+license = { text = "MIT" }
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Legal Industry",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business :: Office Suites",
+]
+dependencies = [
+    "beautifulsoup4>=4.14.3",
+    "docxtpl[subdoc]>=0.20.2",
+    "PieXif>=1.1",
+    "Pillow>=10.0",
+    "PySide6>=6.6",
+    "python-dateutil>=2.9.0.post0",
+    "python-docx-replace>=0.4.4",
+]
+
+[project.scripts]
+laudo = "laudo.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/renatormc/laudo"
+Repository = "https://github.com/renatormc/laudo"
+Issues = "https://github.com/renatormc/laudo/issues"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.20.2",
+    "pyinstaller>=6.20.0",
+    "pytest>=8.0",
+    "types-beautifulsoup4>=4.12.0.20250516",
+    "types-pillow",
+    "types-python-dateutil>=2.9.0.20260508",
+]
+
+[tool.mypy]
+ignore_missing_imports = true
+
+[build-system]
+requires = ["uv_build>=0.11.14,<0.12.0"]
+build-backend = "uv_build"
+>>>>>>> cd4b79770865751ff1f2eb5386c9f21c56f179c8
