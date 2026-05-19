@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 import tempfile
 from dataclasses import dataclass
@@ -42,12 +43,30 @@ def _read_context_json(folder: Path) -> dict:
     return ctx
 
 
+SECTION_RE = re.compile(r'\[\[(.+?)\]\]')
+
+def _read_markdown(content: str) -> str | dict[str, str]:
+    if '[[' not in content:
+        return content
+    parts = SECTION_RE.split(content)
+    sections: dict[str, str] = {}
+    for i in range(1, len(parts), 2):
+        name = parts[i].strip()
+        section_content = parts[i + 1].strip() if i + 1 < len(parts) else ""
+        sections[name] = section_content
+    return sections
+
 def _read_context_markdown(folder: Path, ctx_vars: dict) -> dict:
     ctx: dict = {}
     for md_file in sorted(folder.glob("*.md")):
         key = md_file.stem.replace(" ", "_")
         content = md_file.read_text(encoding="utf-8")
-        ctx[key] = Template(content).render(ctx_vars)
+        rendered = Template(content).render(ctx_vars)
+        parts = _read_markdown(rendered)
+        if isinstance(parts, dict):
+            ctx.update(parts)
+        else:
+            ctx[key] = parts
     return ctx
 
 
