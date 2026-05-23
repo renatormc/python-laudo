@@ -9,8 +9,9 @@ src/laudo/
 ├── __init__.py          # Public API: convert()
 ├── __main__.py          # CLI entry point (click)
 ├── core.py              # Core conversion logic
+├── db.py                # SQLite caption storage
 ├── assets.py            # Asset (image) handling
-├── exif.py              # EXIF caption read/write
+├── exif.py              # EXIF caption read/write (legacy)
 ├── images.py            # Image listing, thumbnails, reduced
 ├── filters/             # Custom Jinja2 filters (markdown, etc.)
 ├── globals/             # Jinja2 globals (subdoc)
@@ -33,14 +34,33 @@ The `folder` parameter must contain:
 
 ```
 my_project/
-├── template.docx          # docxtpl template with Jinja2 placeholders
-├── fotos/                 # Images with captions (EXIF)
+├── template.docx          # (optional) docxtpl template with Jinja2 placeholders
+├── .laudo/                # (created automatically)
+│   ├── .template          # (optional) file containing template name (without extension)
+│   ├── pics.sqlite        # Image captions database
+│   └── thumbs/            # Generated thumbnails and reduced images
+├── fotos/                 # Images with captions (stored in SQLite)
 │   ├── image1.png
 │   └── image2.jpg
 ├── context.txt            # (optional) Variables one per line: varname = value
 ├── intro.md               # One or more .md files
 └── chapter-1.md
 ```
+
+## Template Resolution
+
+Templates are resolved in the following order:
+
+1. **Working folder**: Looks for `template.docx` or `template.odt` in the project folder.
+2. **`.template` file**: If not found, reads the `.template` file in the `.laudo/` folder. The file should contain the template name (without extension).
+3. **`LAUDOS_TEMPLATES_FOLDER`**: If `.template` exists, looks for the template in the directory specified by the `LAUDOS_TEMPLATES_FOLDER` environment variable. The template file must be named `<name>.docx` or `<name>.odt`.
+
+Example `.template` file:
+```
+my-report-template
+```
+
+This would look for `my-report-template.docx` or `my-report-template.odt` in `$LAUDOS_TEMPLATES_FOLDER`.
 
 ## Context Building
 
@@ -62,8 +82,8 @@ All data below is merged and passed to `docxtpl.DocxTemplate.render()`:
 - All image files inside `fotos/` are listed.
 - A context variable `pics` is created as a `dict[str, dict]`.
 - Key: filename without extension. Value: `{"path": Path, "caption": str, "thumb": Path, "reduced": Path}`.
-- `caption` is read from EXIF `ImageDescription` via `exif.py`.
-- `thumb` and `reduced` are generated on demand via `images.py`.
+- `caption` is read from the SQLite database `pics.sqlite` in the `.laudo/` folder via `db.py`.
+- `thumb` and `reduced` are generated on demand via `images.py` and stored in `.laudo/thumbs/`.
 
 ### `subdoc` global function
 
@@ -92,11 +112,12 @@ laudo [command] [options]
 
 - `gen [--dir <folder>] [--debug]` — generate docx/pdf from markdown files (default: current directory).
 - `captions [--dir <folder>]` — open the caption editor (PySide6).
+- `template <name> [--dir <folder>]` — set the template name for a folder (creates `.laudo/.template` file).
 - `install` — install the `laudo` wrapper script to `~/.local/bin/`.
 
 ## GUI (`gui/`)
 
-A PySide6 caption editor that displays all images from `fotos/` as thumbnails with a text field for each caption. Captions are saved to EXIF `ImageDescription` via `exif.py`.
+A PySide6 caption editor that displays all images from `fotos/` as thumbnails with a text field for each caption. Captions are saved to the SQLite database `pics.sqlite` in the `.laudo/` folder via `db.py`.
 
 ## Conventions
 

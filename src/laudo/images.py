@@ -2,11 +2,10 @@ from pathlib import Path
 
 from PIL import Image
 
-from .exif import get_caption as _get_caption
-from .exif import set_caption as _set_caption
+from .db import get_caption as _get_caption
+from .db import set_caption as _set_caption
 
 _IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".tiff", ".tif", ".webp"}
-_THUMB_DIR = ".thumbs"
 _THUMB_MAX = 300
 _REDUCED_MAX = 1920
 
@@ -15,8 +14,12 @@ def _fotos_dir() -> Path:
     return Path.cwd() / "fotos"
 
 
+def _laudo_dir() -> Path:
+    return Path.cwd() / ".laudo"
+
+
 def _thumbs_dir() -> Path:
-    return _fotos_dir() / _THUMB_DIR
+    return _laudo_dir() / "thumbs"
 
 
 def _ensure_thumbs() -> Path:
@@ -69,6 +72,13 @@ def get_thumbnail(name: str) -> Path | None:
     _ensure_thumbs()
     with Image.open(original) as img:
         img.thumbnail((_THUMB_MAX, _THUMB_MAX))
+        if img.mode == "RGBA":
+            img = img.convert("RGB")
+        img.save(str(thumb), "JPEG")
+    return thumb
+    _ensure_thumbs()
+    with Image.open(original) as img:
+        img.thumbnail((_THUMB_MAX, _THUMB_MAX))
         img.save(str(thumb), "JPEG")
     return thumb
 
@@ -87,19 +97,17 @@ def get_reduced(name: str) -> Path | None:
     _ensure_thumbs()
     with Image.open(original) as img:
         img.thumbnail((_REDUCED_MAX, _REDUCED_MAX))
+        if img.mode == "RGBA":
+            img = img.convert("RGB")
         img.save(str(reduced), "JPEG")
     return reduced
 
 
 def get_caption(name: str) -> str:
-    original = _find_by_name(name)
-    if original is None:
-        return ""
-    return _get_caption(original)
+    return _get_caption(name)
 
 
 def set_caption(name: str, caption: str) -> None:
-    original = _find_by_name(name)
-    if original is None:
+    if _find_by_name(name) is None:
         raise FileNotFoundError(f"Image '{name}' not found in fotos/")
-    _set_caption(original, caption)
+    _set_caption(name, caption)

@@ -55,7 +55,7 @@ def _cmd_install() -> None:
                 print(f"  {path_hint}")
 
 
-def _cmd_gen(dir_: Path | None, debug: bool, pdf: bool, output: Path | None, template: Path | None) -> None:
+def _cmd_gen(dir_: Path | None, debug: Path | bool, pdf: bool, output: Path | None, template: Path | None) -> None:
     if dir_ is not None:
         os.chdir(str(dir_))
     folder = Path.cwd()
@@ -73,6 +73,17 @@ def _cmd_captions(dir_: Path | None) -> None:
     run_gui(Path.cwd())
 
 
+def _cmd_template(dir_: Path | None, name: str) -> None:
+    if dir_ is not None:
+        os.chdir(str(dir_))
+    folder = Path.cwd()
+    laudo_dir = folder / ".laudo"
+    laudo_dir.mkdir(parents=True, exist_ok=True)
+    template_file = laudo_dir / ".template"
+    template_file.write_text(f"{name}\n", encoding="utf-8")
+    print(f"Template '{name}' set for {folder}")
+
+
 def _existing_dir(value: str) -> Path:
     p = Path(value)
     if not p.is_dir():
@@ -88,13 +99,17 @@ def main() -> None:
 
     gen_p = sub.add_parser("gen", help="Generate docx/pdf from markdown files.")
     gen_p.add_argument("--dir", type=_existing_dir, default=None, help="Working directory (default: current directory)")
-    gen_p.add_argument("--debug", action="store_true", help="Print the template context before rendering")
+    gen_p.add_argument("--debug", nargs="?", const=True, default=None, type=Path, help="Print the template context before rendering, or write to a file if a path is provided")
     gen_p.add_argument("--pdf", action="store_true", help="Generate PDF instead of DOCX (requires pandoc)")
     gen_p.add_argument("--output", type=Path, default=None, help="Output file path (default: laudo.docx or laudo.pdf in working directory)")
     gen_p.add_argument("--template", type=Path, default=None, help="Path to template file (default: template.docx or template.odt in project folder)")
 
     cap_p = sub.add_parser("captions", help="Open the caption editor GUI.")
     cap_p.add_argument("--dir", type=_existing_dir, default=None, help="Working directory (default: current directory)")
+
+    tpl_p = sub.add_parser("template", help="Set the template name for the current folder (creates .template file).")
+    tpl_p.add_argument("name", help="Template name (without extension)")
+    tpl_p.add_argument("--dir", type=_existing_dir, default=None, help="Working directory (default: current directory)")
 
     sub.add_parser("install", help="Install the laudo wrapper script to ~/.local/bin.")
 
@@ -111,6 +126,8 @@ def main() -> None:
             _cmd_gen(args.dir, args.debug, args.pdf, args.output, args.template)
         case "captions":
             _cmd_captions(args.dir)
+        case "template":
+            _cmd_template(args.dir, args.name)
 
 
 if __name__ == "__main__":

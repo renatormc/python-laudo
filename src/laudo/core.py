@@ -5,7 +5,7 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 import json
-from docxtpl import DocxTemplate
+from docxtpl import DocxTemplate, template
 from jinja2 import Environment, Template
 
 from laudo.filters.markdown_filter import MarkdownFilter
@@ -71,8 +71,7 @@ def _read_context_markdown(folder: Path, ctx_vars: dict) -> dict:
 
 
 def _read_context_pics(folder: Path) -> list[dict]:
-    from .exif import get_caption as _get_exif_caption
-    from .images import _IMAGE_EXTENSIONS, get_reduced, get_thumbnail
+    from .images import _IMAGE_EXTENSIONS, get_caption, get_reduced, get_thumbnail
 
     fotos = folder / "fotos"
     if not fotos.is_dir():
@@ -87,7 +86,7 @@ def _read_context_pics(folder: Path) -> list[dict]:
                 pics.append({
                     "refname": img.stem,
                     "path": img,
-                    "caption": _get_exif_caption(img),
+                    "caption": get_caption(img.stem),
                     "thumb": get_thumbnail(img.stem),
                     "reduced": get_reduced(img.stem),
                     "label": "Foto",
@@ -107,6 +106,7 @@ def _build_context(folder: Path) -> dict:
     pics = _read_context_pics(folder)
     if pics:
         ctx_vars["pics"] = pics
+        ctx_vars["pics_map"] = {p["refname"]: p for p in pics}
     return ctx_vars
 
 @dataclass
@@ -160,25 +160,65 @@ def render_doc(template_path: Path, context: dict, output_path: Path, replace_re
     raise ValueError(f"Unsupported template format: {template_path.suffix}")
 
 
+def _resolve_template_from_folder(folder: Path, template_name: str) -> Path | None:
+    for ext in (".docx", ".odt"):
+        candidate = folder / f"{template_name}{ext}"
+        if candidate.is_file():
+            return candidate
+    return None
 
-def gen_laudo(folder: Path, output: Path, *, debug: bool = False, template: Path | None = None) -> Path:
+
+def get_template(folder: Path) -> Path:
+    # First: look for template.docx or template.odt in working folder
+    for ext in (".docx", ".odt"):
+        template_path = folder / f"template{ext}"
+        if template_path.is_file():
+            return template_path
+
+    # Second: look for .template file inside .laudo/ folder and read template name
+    template_ref = folder / ".laudo" / ".template"
+    if template_ref.is_file():
+        template_name = template_ref.read_text(encoding="utf-8").strip()
+        if template_name:
+            # Remove extension if provided
+            template_name = Path(template_name).stem
+
+            # Third: look in LAUDOS_TEMPLATES_FOLDER
+            templates_dir = os.environ.get("LAUDOS_TEMPLATES_FOLDER")
+            if templates_dir:
+                templates_path = Path(templates_dir)
+                if templates_path.is_dir():
+                    resolved = _resolve_template_from_folder(templates_path, template_name)
+                    if resolved:
+                        return resolved
+
+    raise FileNotFoundError(
+        "template.docx or template.odt not found in project folder, "
+        "and no valid template found via .laudo/.template file or LAUDOS_TEMPLATES_FOLDER"
+    )
+
+
+def gen_laudo(folder: Path, output: Path, *, debug: bool | Path = False, template: Path | None = None) -> Path:
     if template is not None:
         template_path = template
     else:
-        template_path = folder / "template.docx"
-        if not template_path.is_file():
-            template_path = folder / "template.odt"
-            if not template_path.is_file():
-                raise FileNotFoundError(f"template.docx or template.odt not found in project folder or in package templates")
-            
+        template_path = get_template(folder)
     output = output.with_suffix(template_path.suffix)
 
     context = _build_context(folder)
     if debug:
         import pprint
-        print("--- context ---")
-        pprint.pprint(context, indent=2, sort_dicts=False)
-        print("---------------")
+        import io
+        buf = io.StringIO()
+        pprint.pprint(context, indent=2, sort_dicts=False, stream=buf)
+        formatted = buf.getvalue()
+        if isinstance(debug, Path):
+            debug.write_text(formatted, encoding="utf-8")
+            print(f"Context written to {debug}")
+        else:
+            print("--- context ---")
+            print(formatted)
+            print("---------------")
 
     if output.suffix == ".pdf":
         doc_path = output.with_suffix(template_path.suffix)
