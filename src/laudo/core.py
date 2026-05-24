@@ -161,10 +161,12 @@ def render_doc(template_path: Path, context: dict, output_path: Path, replace_re
 
 
 def _resolve_template_from_folder(folder: Path, template_name: str) -> Path | None:
-    for ext in (".docx", ".odt"):
-        candidate = folder / f"{template_name}{ext}"
-        if candidate.is_file():
-            return candidate
+    template_subdir = folder / template_name
+    if template_subdir.is_dir():
+        for ext in (".docx", ".odt"):
+            candidate = template_subdir / f"template{ext}"
+            if candidate.is_file():
+                return candidate
     return None
 
 

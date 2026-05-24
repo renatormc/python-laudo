@@ -1,5 +1,6 @@
 import argparse
 import os
+import shutil
 import stat
 import sys
 from pathlib import Path
@@ -84,6 +85,38 @@ def _cmd_template(dir_: Path | None, name: str) -> None:
     print(f"Template '{name}' set for {folder}")
 
 
+def _cmd_init(dir_: Path | None, name: str) -> None:
+    if dir_ is not None:
+        os.chdir(str(dir_))
+    folder = Path.cwd()
+
+    laudo_dir = folder / ".laudo"
+    laudo_dir.mkdir(parents=True, exist_ok=True)
+    template_file = laudo_dir / ".template"
+    template_file.write_text(f"{name}\n", encoding="utf-8")
+    print(f"Template '{name}' set for {folder}")
+
+    templates_dir = os.environ.get("LAUDOS_TEMPLATES_FOLDER")
+    if not templates_dir:
+        print("LAUDOS_TEMPLATES_FOLDER not set, skipping file copy")
+        return
+
+    src = Path(templates_dir) / name
+    if not src.is_dir():
+        print(f"Template folder not found: {src}, skipping file copy")
+        return
+
+    skip_exts = {".docx", ".odt"}
+    copied = 0
+    for item in src.iterdir():
+        if item.is_file() and item.suffix not in skip_exts:
+            dest = folder / item.name
+            shutil.copy2(str(item), str(dest))
+            copied += 1
+
+    print(f"Copied {copied} file(s) from {src} to {folder}")
+
+
 def _existing_dir(value: str) -> Path:
     p = Path(value)
     if not p.is_dir():
@@ -111,6 +144,10 @@ def main() -> None:
     tpl_p.add_argument("name", help="Template name (without extension)")
     tpl_p.add_argument("--dir", type=_existing_dir, default=None, help="Working directory (default: current directory)")
 
+    init_p = sub.add_parser("init", help="Initialize project from a template: saves template name and copies template files.")
+    init_p.add_argument("name", help="Template name (without extension)")
+    init_p.add_argument("--dir", type=_existing_dir, default=None, help="Working directory (default: current directory)")
+
     sub.add_parser("install", help="Install the laudo wrapper script to ~/.local/bin.")
 
     args = parser.parse_args()
@@ -128,6 +165,8 @@ def main() -> None:
             _cmd_captions(args.dir)
         case "template":
             _cmd_template(args.dir, args.name)
+        case "init":
+            _cmd_init(args.dir, args.name)
 
 
 if __name__ == "__main__":

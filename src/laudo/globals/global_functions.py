@@ -93,6 +93,9 @@ class GlobalFunctions:
             if value:
                 ret.extend(value.split(separator))
         return ret
+    
+    def filter_dashes(self, value: list[dict], field: str):
+        return [item for item in value if not str(item.get(field)).startswith("_")]
         
     
 
