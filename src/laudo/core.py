@@ -205,7 +205,8 @@ def gen_laudo(folder: Path, output: Path, *, debug: bool | Path = False, templat
         template_path = template
     else:
         template_path = get_template(folder)
-    output = output.with_suffix(template_path.suffix)
+    if output.suffix != ".pdf":
+        output = output.with_suffix(template_path.suffix)
 
     context = _build_context(folder)
     if debug:
@@ -221,7 +222,6 @@ def gen_laudo(folder: Path, output: Path, *, debug: bool | Path = False, templat
             print("--- context ---")
             print(formatted)
             print("---------------")
-
     if output.suffix == ".pdf":
         doc_path = output.with_suffix(template_path.suffix)
         render_doc(template_path, context, doc_path)
