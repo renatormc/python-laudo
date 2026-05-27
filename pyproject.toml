@@ -1,6 +1,6 @@
 [project]
 name = "laudo"
-version = "0.1.2"
+version = "0.1.3"
 description = "Generate forensic report using docxtpl templates"
 readme = "README.md"
 authors = [
