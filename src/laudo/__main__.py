@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import shutil
 import stat
@@ -6,6 +7,7 @@ import sys
 from pathlib import Path
 
 from . import convert
+from .core import _parse_context_txt
 
 
 def _find_project_root() -> Path:
@@ -85,6 +87,14 @@ def _cmd_template(dir_: Path | None, name: str) -> None:
     print(f"Template '{name}' set for {folder}")
 
 
+def _cmd_vars(dir_: Path | None) -> None:
+    if dir_ is not None:
+        os.chdir(str(dir_))
+    folder = Path.cwd()
+    ctx = _parse_context_txt(folder)
+    print(json.dumps(ctx, indent=2, ensure_ascii=False))
+
+
 def _cmd_init(dir_: Path | None, name: str) -> None:
     if dir_ is not None:
         os.chdir(str(dir_))
@@ -144,6 +154,9 @@ def main() -> None:
     tpl_p.add_argument("name", help="Template name (without extension)")
     tpl_p.add_argument("--dir", type=_existing_dir, default=None, help="Working directory (default: current directory)")
 
+    vars_p = sub.add_parser("vars", help="Print context.txt variables as JSON.")
+    vars_p.add_argument("--dir", type=_existing_dir, default=None, help="Working directory (default: current directory)")
+
     init_p = sub.add_parser("init", help="Initialize project from a template: saves template name and copies template files.")
     init_p.add_argument("name", help="Template name (without extension)")
     init_p.add_argument("--dir", type=_existing_dir, default=None, help="Working directory (default: current directory)")
@@ -165,6 +178,8 @@ def main() -> None:
             _cmd_captions(args.dir)
         case "template":
             _cmd_template(args.dir, args.name)
+        case "vars":
+            _cmd_vars(args.dir)
         case "init":
             _cmd_init(args.dir, args.name)
 
