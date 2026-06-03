@@ -12,7 +12,7 @@ from laudo.filters.markdown_filter import MarkdownFilter
 from laudo.globals.inline_image import InlineImage
 from laudo.globals.subdoc_func import SubdocFunc
 from laudo.reference_replacer import DocxReferenceReplacer
-from laudo.odttpl import Renderer
+from odttpl import Renderer
 from .filters import register as register_filters
 from .globals import register as register_globals
 
@@ -147,8 +147,7 @@ def render_odt(template_path: Path, context: dict, output_path: Path, replace_re
     register_filters(rd.environment)
     register_globals(rd.environment)
 
-    rd.render(str(template_path), **context)
-    rd.save(output_path)
+    rd.render(str(template_path), output_path, context)
     return output_path
 
 
@@ -163,7 +162,7 @@ def render_doc(template_path: Path, context: dict, output_path: Path, replace_re
 def _resolve_template_from_folder(folder: Path, template_name: str) -> Path | None:
     template_subdir = folder / template_name
     if template_subdir.is_dir():
-        for ext in (".docx", ".odt"):
+        for ext in (".odt",".docx"):
             candidate = template_subdir / f"template{ext}"
             if candidate.is_file():
                 return candidate
@@ -172,7 +171,7 @@ def _resolve_template_from_folder(folder: Path, template_name: str) -> Path | No
 
 def get_template(folder: Path) -> Path:
     # First: look for template.docx or template.odt in working folder
-    for ext in (".docx", ".odt"):
+    for ext in (".odt", ".docx"):
         template_path = folder / f"template{ext}"
         if template_path.is_file():
             return template_path
@@ -210,18 +209,23 @@ def gen_laudo(folder: Path, output: Path, *, debug: bool | Path = False, templat
 
     context = _build_context(folder)
     if debug:
-        import pprint
-        import io
-        buf = io.StringIO()
-        pprint.pprint(context, indent=2, sort_dicts=False, stream=buf)
-        formatted = buf.getvalue()
-        if isinstance(debug, Path):
-            debug.write_text(formatted, encoding="utf-8")
-            print(f"Context written to {debug}")
+        if isinstance(debug, Path) and debug.suffix == ".pkl":
+            import pickle
+            debug.write_bytes(pickle.dumps(context))
+            print(f"Context pickled to {debug}")
         else:
-            print("--- context ---")
-            print(formatted)
-            print("---------------")
+            import pprint
+            import io
+            buf = io.StringIO()
+            pprint.pprint(context, indent=2, sort_dicts=False, stream=buf)
+            formatted = buf.getvalue()
+            if isinstance(debug, Path):
+                debug.write_text(formatted, encoding="utf-8")
+                print(f"Context written to {debug}")
+            else:
+                print("--- context ---")
+                print(formatted)
+                print("---------------")
     if output.suffix == ".pdf":
         doc_path = output.with_suffix(template_path.suffix)
         render_doc(template_path, context, doc_path)
