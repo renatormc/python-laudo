@@ -2,12 +2,12 @@ import os
 import re
 import shutil
 import tempfile
-from dataclasses import dataclass
 from pathlib import Path
 import json
-from docxtpl import DocxTemplate, template
+from docxtpl import DocxTemplate
 from jinja2 import Environment, Template
 
+from laudo.custom_types import RenderEnv
 from laudo.filters.markdown_filter import MarkdownFilter
 from laudo.globals.inline_image import InlineImage
 from laudo.globals.subdoc_func import SubdocFunc
@@ -111,12 +111,8 @@ def _build_context(folder: Path) -> dict:
         ctx_vars["pics_map"] = {p["refname"]: p for p in pics}
     return ctx_vars
 
-@dataclass
-class RenderEnv:
-    tpl: DocxTemplate
-    jinja_env: Environment
-    temp_folder: Path
-    assets_folder: Path
+
+   
 
 def render_docx(template_path: Path, context: dict, output_path: Path, replace_references=True) -> Path:
     temp_folder = Path(tempfile.mkdtemp(prefix="laudo_"))
@@ -124,7 +120,6 @@ def render_docx(template_path: Path, context: dict, output_path: Path, replace_r
         tpl=DocxTemplate(str(template_path)),
         jinja_env=Environment(),
         temp_folder=temp_folder,
-        assets_folder=template_path.parent / "assets",
     )
     try:
         renv.jinja_env.filters["markdown"] = MarkdownFilter(renv)
