@@ -11,8 +11,10 @@ from jinja2 import Environment, Template
 from laudo.filters.markdown_filter import MarkdownFilter
 from laudo.globals.inline_image import InlineImage
 from laudo.globals.subdoc_func import SubdocFunc
-from laudo.reference_replacer import DocxReferenceReplacer
+from laudo.docx_reference_replacer import DocxReferenceReplacer
 from odttpl import Renderer
+
+from laudo.odt_reference_replacer import OdtReferenceReplacer
 from .filters import register as register_filters
 from .globals import register as register_globals
 
@@ -148,6 +150,9 @@ def render_odt(template_path: Path, context: dict, output_path: Path, replace_re
     register_globals(rd.environment)
 
     rd.render(str(template_path), output_path, context)
+    if replace_references:
+        replacer = OdtReferenceReplacer()
+        replacer.replace(output_path, output_path)
     return output_path
 
 
