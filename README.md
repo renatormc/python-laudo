@@ -83,10 +83,16 @@ name = John Doe
 
 The result will be `# Hello John Doe`, then stored in context key `intro`.
 
-Use the `subdoc` global function to embed `.docx` files from the `assets/` folder:
+Use the `subdoc` global function to embed `.docx` sub-templates located alongside the main template:
 
 ```jinja2
 {{p subdoc("cover.docx") }}
+```
+
+You can also pass context variables to the sub-template:
+
+```jinja2
+{{p subdoc("cover.docx", title=title, author=author) }}
 ```
 
 Use the `markdown` filter in your template:
