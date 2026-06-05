@@ -88,8 +88,9 @@ All data below is merged and passed to `docxtpl.DocxTemplate.render()`:
 ### `subdoc` global function
 
 - A Jinja2 global named `subdoc` is registered in the docxtpl environment.
-- Pass the relative path (relative to `assets/`) as the argument.
-- The returned subdocument can be inserted into the template using docxtpl's subdocument syntax (e.g., `{{p subdoc("cover.docx") }}`).
+- Pass the relative path to a `.docx` file alongside the main template.
+- Optional keyword arguments are passed as context to the sub-template before embedding.
+- The returned subdocument can be inserted using docxtpl's subdocument syntax (e.g., `{{p subdoc("cover.docx") }}` or `{{p subdoc("cover.docx", title=title) }}`).
 
 ### `markdown` Jinja2 filter
 - A custom filter named `markdown` is registered in the docxtpl environment.
