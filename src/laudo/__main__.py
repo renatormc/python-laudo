@@ -24,14 +24,14 @@ def _cmd_install() -> None:
     project_root = _find_project_root()
 
     if os.name == "nt":
-        script = bindir / "laudo-dev.ps1"
+        script = bindir / "laudo.ps1"
         content = f"& uv run --project {project_root} laudo @args\n"
         script.write_text(content.lstrip())
         print(f"Installed laudo wrapper at {script}")
         path_sep = ";"
         path_hint = f"$env:Path = \"{bindir};$env:Path\""
     else:
-        script = bindir / "laudo-dev"
+        script = bindir / "laudo"
         content = f"#!/usr/bin/env bash\nexec uv run --project {project_root} laudo \"$@\"\n"
         script.write_text(content.lstrip())
         script.chmod(script.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
