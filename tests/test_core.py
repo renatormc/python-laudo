@@ -1,13 +1,25 @@
 from pathlib import Path
 
-from laudo.core import _build_context, _read_context_json, _read_context_markdown, _read_context_pics, _read_markdown, render_docx
+from PIL import Image
+
+from laudo.core import (
+    PicsContext,
+    _build_context,
+    _read_context_json,
+    _read_context_markdown,
+    _read_context_pics,
+    _read_markdown,
+    _replace_pos_vars,
+    render_docx,
+)
 
 
 def test_build_context_empty(tmp_path: Path):
     folder = tmp_path / "empty"
     folder.mkdir()
     ctx = _build_context(folder)
-    assert ctx == {}
+    assert isinstance(ctx.get("pics"), PicsContext)
+    assert not ctx["pics"]
 
 
 def test_build_context_md_files(sample_project: Path):
@@ -38,7 +50,8 @@ def test_build_context_context_txt_skips_invalid(tmp_path: Path):
         "valid = yes\n\n=bad\nnoequal\nkey= value\n", encoding="utf-8"
     )
     ctx = _build_context(folder)
-    assert ctx == {"valid": "yes", "key": "value"}
+    assert ctx["valid"] == "yes"
+    assert ctx["key"] == "value"
 
 
 def test_read_context_json(tmp_path: Path):
@@ -47,6 +60,17 @@ def test_read_context_json(tmp_path: Path):
     (folder / "data.json").write_text('{"foo": "bar"}', encoding="utf-8")
     ctx = _read_context_json(folder)
     assert ctx == {"data": {"foo": "bar"}}
+
+
+def test_replace_pos_vars():
+    result = _replace_pos_vars("image_group(name, 3)")
+    expected = "{{p subdoc('image_group', pics=pics.group('name'),  cols=3) }}"
+    assert result == expected, f"Expected {expected!r}, got {result!r}"
+    result = _replace_pos_vars("xx image_group(a, b) yy")
+    expected = "xx {{p subdoc('image_group', pics=pics.group('a'),  cols=b) }} yy"
+    assert result == expected, f"Expected {expected!r}, got {result!r}"
+    assert _replace_pos_vars("no match here") == "no match here"
+    assert _replace_pos_vars("") == ""
 
 
 def test_read_markdown_no_sections():
@@ -96,17 +120,55 @@ def test_read_context_markdown(tmp_path: Path):
 
 def test_read_context_pics(sample_project: Path, monkeypatch):
     monkeypatch.chdir(sample_project)
-    pics = _read_context_pics(sample_project)
-    assert isinstance(pics, list)
-    assert len(pics) == 2
-    stems = {p["refname"] for p in pics}
+    pics_ctx = _read_context_pics(sample_project)
+    assert isinstance(pics_ctx, PicsContext)
+    assert len(pics_ctx.pics) == 2
+    stems = {p["refname"] for p in pics_ctx.pics}
     assert stems == {"logo", "photo"}
-    logo = next(p for p in pics if p["refname"] == "logo")
+    logo = next(p for p in pics_ctx.pics if p["refname"] == "logo")
     assert logo["caption"] == ""
     assert logo["path"].name == "logo.png"
     assert logo["thumb"] is not None
     assert logo["thumb"].is_file()
     assert logo["reduced"] is not None
+    assert logo["group"] == ""
+    assert pics_ctx.pics_map["logo"] is logo
+    assert pics_ctx.get("logo") is logo
+    assert pics_ctx.get("nonexistent") is None
+    assert bool(pics_ctx) is True
+
+
+def test_read_context_pics_empty(tmp_path: Path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    pics_ctx = _read_context_pics(tmp_path)
+    assert isinstance(pics_ctx, PicsContext)
+    assert len(pics_ctx.pics) == 0
+    assert bool(pics_ctx) is False
+
+
+def test_read_context_pics_subfolders(tmp_path: Path, monkeypatch):
+    folder = tmp_path / "proj"
+    folder.mkdir()
+    (folder / "template.docx").write_text("tpl", encoding="utf-8")
+    fotos = folder / "fotos"
+    fotos.mkdir()
+    Image.new("RGB", (10, 10)).save(str(fotos / "a.jpg"))
+    sub = fotos / "events"
+    sub.mkdir()
+    Image.new("RGB", (10, 10)).save(str(sub / "b.jpg"))
+    sub2 = fotos / "events" / "party"
+    sub2.mkdir(parents=True)
+    Image.new("RGB", (10, 10)).save(str(sub2 / "c.jpg"))
+
+    monkeypatch.chdir(folder)
+    pics_ctx = _read_context_pics(folder)
+    assert len(pics_ctx.pics) == 3
+    groups = [(p["refname"], p["group"]) for p in pics_ctx.pics]
+    assert groups == [
+        ("a", ""),
+        ("b", "events"),
+        ("c", str(Path("events/party"))),
+    ]
 
 
 def test_build_context_pics_no_fotos(tmp_path: Path):
@@ -114,7 +176,8 @@ def test_build_context_pics_no_fotos(tmp_path: Path):
     folder.mkdir()
     (folder / "readme.md").write_text("# Hi", encoding="utf-8")
     ctx = _build_context(folder)
-    assert "pics" not in ctx
+    assert isinstance(ctx.get("pics"), PicsContext)
+    assert not ctx["pics"]
 
 
 def test_render_docx(template_path: Path, tmp_path: Path):

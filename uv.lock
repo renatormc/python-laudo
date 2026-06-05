@@ -147,7 +147,6 @@ source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },
     { name = "docxtpl", extra = ["subdoc"] },
-    { name = "odttpl" },
     { name = "piexif" },
     { name = "pillow" },
     { name = "pyside6" },
@@ -169,7 +168,6 @@ dev = [
 requires-dist = [
     { name = "beautifulsoup4", specifier = ">=4.14.3" },
     { name = "docxtpl", extras = ["subdoc"], specifier = ">=0.20.2" },
-    { name = "odttpl", specifier = ">=0.1.2" },
     { name = "piexif", specifier = ">=1.1" },
     { name = "pillow", specifier = ">=10.0" },
     { name = "pyside6", specifier = ">=6.6" },
@@ -309,15 +307,6 @@ wheels = [
 ]
 
 [[package]]
-name = "markdown2"
-version = "2.5.5"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e4/ae/07d4a5fcaa5509221287d289323d75ac8eda5a5a4ac9de2accf7bbcc2b88/markdown2-2.5.5.tar.gz", hash = "sha256:001547e68f6e7fcf0f1cb83f7e82f48aa7d48b2c6a321f0cd20a853a8a2d1664", size = 157249, upload-time = "2026-03-02T20:46:53.411Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/43/af/4b3891eb0a49d6cfd5cbf3e9bf514c943afc2b0f13e2c57cc57cd88ecc21/markdown2-2.5.5-py3-none-any.whl", hash = "sha256:be798587e09d1f52d2e4d96a649c4b82a778c75f9929aad52a2c95747fa26941", size = 56250, upload-time = "2026-03-02T20:46:52.032Z" },
-]
-
-[[package]]
 name = "markupsafe"
 version = "3.0.3"
 source = { registry = "https://pypi.org/simple" }
@@ -413,21 +402,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/a2/6e/371856a3fb9d31ca8dac321cda606860fa4548858c0cc45d9d1d4ca2628b/mypy_extensions-1.1.0.tar.gz", hash = "sha256:52e68efc3284861e772bbcd66823fde5ae21fd2fdb51c62a211403730b916558", size = 6343, upload-time = "2025-04-22T14:54:24.164Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/79/7b/2c79738432f5c924bef5071f933bcc9efd0473bac3b4aa584a6f7c1c8df8/mypy_extensions-1.1.0-py3-none-any.whl", hash = "sha256:1be4cccdb0f2482337c4743e60421de3a356cd97508abadd57d47403e94f5505", size = 4963, upload-time = "2025-04-22T14:54:22.983Z" },
-]
-
-[[package]]
-name = "odttpl"
-version = "0.1.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "jinja2" },
-    { name = "lxml" },
-    { name = "markdown2" },
-    { name = "pillow" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/6d/70/0288ea89a9a38075a528704572b797032afb58fe2b59c2f2e7e04771b71a/odttpl-0.1.2.tar.gz", hash = "sha256:dcbbc3ef5504407b97995f3a1a6ea8da81ae9ccc4154464a5eaf1541ec89a4ad", size = 58956, upload-time = "2026-06-03T23:00:26.398Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/0b/40/b55acc269428dc169e40531453ac982b74099988e3fce27336f763d574c0/odttpl-0.1.2-py3-none-any.whl", hash = "sha256:245140e15728ec8ec87d2704ce54dc7632b5df04378d21b1724367cd0dfdafe4", size = 60950, upload-time = "2026-06-03T23:00:24.943Z" },
 ]
 
 [[package]]

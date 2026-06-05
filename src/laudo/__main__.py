@@ -116,7 +116,7 @@ def _cmd_init(dir_: Path | None, name: str) -> None:
         print(f"Template folder not found: {src}, skipping file copy")
         return
 
-    skip_exts = {".docx", ".odt"}
+    skip_exts = {".docx"}
     copied = 0
     for item in src.iterdir():
         if item.is_file() and item.suffix not in skip_exts:
@@ -145,7 +145,7 @@ def main() -> None:
     gen_p.add_argument("--debug", nargs="?", const=True, default=None, type=Path, help="Print the template context before rendering, or write to a file if a path is provided")
     gen_p.add_argument("--pdf", action="store_true", help="Generate PDF instead of DOCX (requires pandoc)")
     gen_p.add_argument("--output", type=Path, default=None, help="Output file path (default: laudo.docx or laudo.pdf in working directory)")
-    gen_p.add_argument("--template", type=Path, default=None, help="Path to template file (default: template.docx or template.odt in project folder)")
+    gen_p.add_argument("--template", type=Path, default=None, help="Path to template file (default: template.docx in project folder)")
 
     cap_p = sub.add_parser("captions", help="Open the caption editor GUI.")
     cap_p.add_argument("--dir", type=_existing_dir, default=None, help="Working directory (default: current directory)")

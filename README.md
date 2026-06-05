@@ -83,6 +83,22 @@ name = John Doe
 
 The result will be `# Hello John Doe`, then stored in context key `intro`.
 
+#### `image_group(name, cols)` shorthand
+
+Inside `.md` files you can use the `image_group(name, cols)` shorthand to embed a sub-template with images from a specific photo group:
+
+```markdown
+image_group(events, 3)
+```
+
+This is automatically expanded to:
+
+```jinja2
+{{p subdoc('image_group', pics=pics.group('events'), cols=3) }}
+```
+
+It renders the `image_group.docx` sub-template, passing the images from the `events` group and the number of columns. See [Fotos](#fotos) for how image groups work.
+
 Use the `subdoc` global function to embed `.docx` sub-templates located alongside the main template:
 
 ```jinja2
@@ -103,16 +119,30 @@ Use the `markdown` filter in your template:
 
 ### Fotos
 
-All image files inside `fotos/` are listed in the `pics` context variable:
+All image files inside `fotos/` are listed recursively (including subdirectories). Two context variables are injected:
+
+- `pics` — `list[dict]` of all images
+- `pics_map` — `dict[str, dict]` keyed by `refname` for quick lookup
+
+Each image dict:
 
 ```json
 {
-  "logo": {"path": "fotos/logo.png", "caption": "", "thumb": "fotos/.thumbs/logo_thumb.jpg", "reduced": "fotos/.thumbs/logo_reduced.jpg"},
-  "photo": {"path": "fotos/photo.jpg", "caption": "", "thumb": "fotos/.thumbs/photo_thumb.jpg", "reduced": "fotos/.thumbs/photo_reduced.jpg"}
+  "refname": "logo",
+  "path": "fotos/logo.png",
+  "caption": "",
+  "thumb": ".laudo/thumbs/logo_thumb.jpg",
+  "reduced": ".laudo/thumbs/logo_reduced.jpg",
+  "label": "Foto",
+  "group": ""
 }
 ```
 
-Captions are read from EXIF `ImageDescription` metadata.
+- `refname` is the filename without extension.
+- `group` is empty for images directly in `fotos/`, or the subfolder path (e.g. `"events"`, `"events/party"`) for images in subdirectories.
+- Results are sorted first by `group`, then by `refname`.
+- Captions are read from the SQLite database `pics.sqlite` in `.laudo/`.
+- Thumbnails and reduced images are generated on demand and stored in `.laudo/thumbs/`.
 
 ## PDF Output
 

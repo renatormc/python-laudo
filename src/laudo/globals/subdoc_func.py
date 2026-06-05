@@ -5,6 +5,7 @@ from docxtpl import DocxTemplate
 from jinja2 import Environment
 
 from laudo.custom_types import RenderEnv
+from laudo.template import get_template
 from ..filters import register as register_filters
 from ..globals import register as register_globals
 from laudo.globals.inline_image import InlineImage
@@ -13,15 +14,19 @@ if TYPE_CHECKING:
 
 
 class SubdocFunc:
-    def __init__(self, renv: RenderEnv):
+    def __init__(self, renv: RenderEnv, *, workdir: Path):
         self.jenv = renv
+        self.workdir = workdir
 
     def __call__(self, relpath: str, **kwargs) -> Subdoc:
         if not relpath.endswith(".docx"):
             relpath = f"{relpath}.docx"
-        template = Path(self.jenv.tpl.template_file).parent / relpath
-        if not template.is_file():
-            raise FileNotFoundError(f"Subdocument template not found: {template}")
+        try:
+            template = get_template(Path(relpath).stem, self.workdir)
+        except FileNotFoundError as e:
+            raise FileNotFoundError(
+                f"Subdocument template not found: {relpath}"
+            ) from e
         if not kwargs:
             return self.jenv.tpl.new_subdoc(str(template))
 
@@ -32,7 +37,7 @@ class SubdocFunc:
         )
         register_filters(renv.jinja_env)
 
-        renv.jinja_env.globals["subdoc"] = SubdocFunc(renv)
+        renv.jinja_env.globals["subdoc"] = SubdocFunc(renv, workdir=self.workdir)
         renv.jinja_env.globals["image"] = InlineImage(renv)
         register_globals(renv.jinja_env)
         renv.tpl.render(kwargs, jinja_env=renv.jinja_env)

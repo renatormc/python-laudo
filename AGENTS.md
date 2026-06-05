@@ -51,16 +51,16 @@ my_project/
 
 Templates are resolved in the following order:
 
-1. **Working folder**: Looks for `template.docx` or `template.odt` in the project folder.
+1. **Working folder**: Looks for `template.docx` in the project folder.
 2. **`.template` file**: If not found, reads the `.template` file in the `.laudo/` folder. The file should contain the template name (without extension).
-3. **`LAUDOS_TEMPLATES_FOLDER`**: If `.template` exists, looks for the template in the directory specified by the `LAUDOS_TEMPLATES_FOLDER` environment variable. The template file must be named `<name>.docx` or `<name>.odt`.
+3. **`LAUDOS_TEMPLATES_FOLDER`**: If `.template` exists, looks for the template in the directory specified by the `LAUDOS_TEMPLATES_FOLDER` environment variable. The template file must be named `<name>.docx`.
 
 Example `.template` file:
 ```
 my-report-template
 ```
 
-This would look for `my-report-template.docx` or `my-report-template.odt` in `$LAUDOS_TEMPLATES_FOLDER`.
+This would look for `my-report-template.docx` in `$LAUDOS_TEMPLATES_FOLDER`.
 
 ## Context Building
 
@@ -79,9 +79,17 @@ All data below is merged and passed to `docxtpl.DocxTemplate.render()`:
 - Example: `intro.md` → context key `intro`, `chapter 1.md` → context key `chapter_1`.
 
 ### From fotos folder
-- All image files inside `fotos/` are listed.
-- A context variable `pics` is created as a `dict[str, dict]`.
-- Key: filename without extension. Value: `{"path": Path, "caption": str, "thumb": Path, "reduced": Path}`.
+- All image files inside `fotos/` are listed recursively (including subdirectories).
+- Images are wrapped in a `PicsContext` object injected as the `pics` context variable:
+  - `.pics` — `list[dict]` of all images
+  - `.pics_map` — `dict[str, dict]` keyed by `refname`
+  - `.all` — all images except those whose `refname` starts with `_`
+  - `.group(name)` — images in a given subfolder group
+  - `.get(refname)` — single image dict by refname
+  - `__bool__` — `True` when any images exist
+- Each image dict: `{"refname": str, "path": Path, "caption": str, "thumb": Path, "reduced": Path, "label": str, "group": str}`.
+- `group` is `""` for images directly in `fotos/`, or the relative subfolder path (e.g. `"events"`, `"events/party"`) for images in subdirectories.
+- Result is sorted first by `group`, then by `refname`.
 - `caption` is read from the SQLite database `pics.sqlite` in the `.laudo/` folder via `db.py`.
 - `thumb` and `reduced` are generated on demand via `images.py` and stored in `.laudo/thumbs/`.
 

@@ -39,12 +39,12 @@ def _reduced_path(name: str) -> Path:
 def _find_by_name(name: str) -> Path | None:
     fotos = _fotos_dir()
     for ext in _IMAGE_EXTENSIONS:
-        candidate = fotos / f"{name}{ext}"
-        if candidate.is_file():
-            return candidate
-        candidate = fotos / f"{name}{ext.upper()}"
-        if candidate.is_file():
-            return candidate
+        for candidate in fotos.rglob(f"{name}{ext}"):
+            if candidate.is_file():
+                return candidate
+        for candidate in fotos.rglob(f"{name}{ext.upper()}"):
+            if candidate.is_file():
+                return candidate
     return None
 
 
@@ -53,7 +53,7 @@ def list_images() -> list[Path]:
     if not fotos.is_dir():
         return []
     return sorted(
-        p for p in fotos.iterdir()
+        p for p in fotos.rglob("*")
         if p.is_file() and p.suffix.lower() in _IMAGE_EXTENSIONS
     )
 
