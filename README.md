@@ -1,6 +1,6 @@
 # laudo
 
-Convert markdown files to **docx** or **pdf** using `docxtpl` templates and LibreOffice headless.
+Convert markdown files to **docx** or **pdf** using `docxtpl` templates.
 
 ## Installation
 
@@ -8,18 +8,20 @@ Convert markdown files to **docx** or **pdf** using `docxtpl` templates and Libr
 pip install laudo
 ```
 
-Requires **Python 3.13+** and **LibreOffice** installed system-wide for PDF output.
+Requires **Python 3.13+** and **LibreOffice** for PDF output.
 
 ## Usage
 
 ### CLI
 
 ```bash
-laudo <folder> <output>
+laudo gen [--dir <folder>] [--debug] [--pdf] [--output <path>] [--template <path>]
+laudo captions [--dir <folder>]
+laudo template <name> [--dir <folder>]
+laudo vars [--dir <folder>]
+laudo init <name> [--dir <folder>]
+laudo install
 ```
-
-- `<folder>` — directory with your project files.
-- `<output>` — output file (`.docx` or `.pdf`).
 
 ### Python API
 
@@ -35,124 +37,45 @@ convert("my_project/", "output.pdf")
 ```
 my_project/
 ├── template.docx          # docxtpl template with Jinja2 placeholders
-├── fotos/                 # Images with captions (EXIF)
-│   ├── logo.png
-│   └── photo.jpg
-├── context.txt            # (optional) Variables one per line
+├── fotos/                 # Images (captions edited via GUI)
+│   ├── image1.png
+│   └── events/
+│       └── party.jpg
+├── context.txt            # (optional) Variables one per line: key = value
 ├── intro.md               # One or more .md files
 └── chapter-1.md
 ```
 
-### `template.docx`
+### Template
 
-A standard Word document using [docxtpl](https://github.com/elapouya/python-docxtpl) syntax. Use Jinja2 placeholders like `{{ variable }}` or `{{p intro|markdown }}`.
+A standard Word document using [docxtpl](https://github.com/elapouya/python-docxtpl) syntax with Jinja2 placeholders like `{{ variable }}` or `{{p intro|markdown }}`.
 
-### `context.txt`
+To use a template from a shared folder, create `.laudo/.template` with the template name and set the `LAUDOS_TEMPLATES_FOLDER` environment variable.
 
-Optional file with variables in `key = value` format, one per line:
+### context.txt
 
-```
-author = John Doe
-title = My Document
-```
-
-Lines starting with `#` and empty lines are ignored.
-
-These variables are also available for substitution inside your `.md` files (see below).
+Optional file with variables in `key = value` format, one per line. Lines starting with `#` and empty lines are ignored. These variables are available for substitution inside `.md` files via `{{ varname }}`.
 
 ### Markdown files
 
-Every `.md` file is read and its content is injected into the template context. The variable name is the filename without extension (whitespace replaced by underscores):
+Every `.md` file is read and its content is injected as a template variable named after the filename (without extension, spaces → underscores):
 
-| File | Context key |
+| File | Template variable |
 |---|---|
 | `intro.md` | `intro` |
 | `chapter 1.md` | `chapter_1` |
 
-You can use `{{ varname }}` inside `.md` files to reference values from `context.txt`:
+Inside markdown files you can reference context variables with `{{ varname }}` and embed image groups with `image_group(name, cols)`.
 
-**context.txt:**
-```
-name = John Doe
-```
+### Images
 
-**intro.md:**
-```markdown
-# Hello {{ name }}
-```
+All images in `fotos/` (including subdirectories) are available as the `pics` variable in templates. Use `pics.group("events")` to get images from a subfolder, or `pics.all` for all images. Captions are edited via the `laudo captions` GUI.
 
-The result will be `# Hello John Doe`, then stored in context key `intro`.
+### Template helpers
 
-#### `image_group(name, cols)` shorthand
-
-Inside `.md` files you can use the `image_group(name, cols)` shorthand to embed a sub-template with images from a specific photo group:
-
-```markdown
-image_group(events, 3)
-```
-
-This is automatically expanded to:
-
-```jinja2
-{{p subdoc('image_group', pics=pics.group('events'), cols=3) }}
-```
-
-It renders the `image_group.docx` sub-template, passing the images from the `events` group and the number of columns. See [Fotos](#fotos) for how image groups work.
-
-Use the `subdoc` global function to embed `.docx` sub-templates located alongside the main template:
-
-```jinja2
-{{p subdoc("cover.docx") }}
-```
-
-You can also pass context variables to the sub-template:
-
-```jinja2
-{{p subdoc("cover.docx", title=title, author=author) }}
-```
-
-Use the `markdown` filter in your template:
-
-```jinja2
-{{p intro|markdown }}
-```
-
-### Fotos
-
-All image files inside `fotos/` are listed recursively (including subdirectories). Two context variables are injected:
-
-- `pics` — `list[dict]` of all images
-- `pics_map` — `dict[str, dict]` keyed by `refname` for quick lookup
-
-Each image dict:
-
-```json
-{
-  "refname": "logo",
-  "path": "fotos/logo.png",
-  "caption": "",
-  "thumb": ".laudo/thumbs/logo_thumb.jpg",
-  "reduced": ".laudo/thumbs/logo_reduced.jpg",
-  "label": "Foto",
-  "group": ""
-}
-```
-
-- `refname` is the filename without extension.
-- `group` is empty for images directly in `fotos/`, or the subfolder path (e.g. `"events"`, `"events/party"`) for images in subdirectories.
-- Results are sorted first by `group`, then by `refname`.
-- Captions are read from the SQLite database `pics.sqlite` in `.laudo/`.
-- Thumbnails and reduced images are generated on demand and stored in `.laudo/thumbs/`.
-
-## PDF Output
-
-When the output path ends with `.pdf`, a docx is generated first and then converted to PDF via LibreOffice headless:
-
-```bash
-laudo my_project/ output.pdf
-```
-
-The intermediate docx file is automatically removed.
+- `{{p variable\|markdown }}` — render markdown as formatted docx content
+- `{{p subdoc("file.docx", key=val) }}` — embed a sub-template
+- `{{p image("fotos/logo.png", width=50) }}` — inline image with size control
 
 ## License
 
