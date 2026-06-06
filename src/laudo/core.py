@@ -1,9 +1,11 @@
+from dataclasses import dataclass
 import os
 import re
 import shutil
 import tempfile
 from pathlib import Path
 import json
+from typing import Tuple
 from docxtpl import DocxTemplate
 from jinja2 import Environment, Template
 
@@ -59,26 +61,34 @@ def _read_markdown(content: str) -> str | dict[str, str]:
 
 
 IMAGE_GROUP_RE = re.compile(r'image_group\(([^,]+),\s*([^)]+)\)')
+IMAGE_RE = re.compile(r'image\(([^,]+)\)')
 
-def _replace_pos_vars(content: str) -> str:
-    return IMAGE_GROUP_RE.sub(r"{{p subdoc('image_group', pics=pics.group('\1'),  cols=\2) }}", content)
+def _replace_pos_vars(content: str) -> Tuple[str, int]:
+    count = 0
+    new_text, n = IMAGE_GROUP_RE.subn(r"{{p subdoc('image_group', pics=pics.group('\1'),  cols=\2) }}", content)
+    count += n
+    new_text, n = IMAGE_RE.subn(r"{{p subdoc('image_group', pics=[pics.get('\1')],  cols=1) }}", new_text)
+    count += n
+    return new_text, count
 
+@dataclass
+class MarkdownContent:
+    sections: dict[str, str]
+    replaces: int
 
-
-def _read_context_markdown(folder: Path, ctx_vars: dict) -> dict:
+def _read_context_markdown(folder: Path, ctx_vars: dict) -> MarkdownContent:
     ctx: dict = {}
     for md_file in sorted(folder.glob("*.md")):
         key = md_file.stem.replace(" ", "_")
         content = md_file.read_text(encoding="utf-8")
         content = Template(content).render(ctx_vars)
-        content = _replace_pos_vars(content)
-        # rendered = Template(content).render(ctx_vars)
+        content, replaces = _replace_pos_vars(content)
         parts = _read_markdown(content)
         if isinstance(parts, dict):
             ctx.update(parts)
         else:
             ctx[key] = parts
-    return ctx
+    return MarkdownContent(sections=ctx, replaces=replaces)
 
 
 class PicsContext:
@@ -87,7 +97,7 @@ class PicsContext:
         self.pics_map = {p["refname"]: p for p in pics}
 
     def all(self) -> list[dict]:
-        return [p for p in self.pics if not p["refname"].startswith("_") and not p["group"].startswith("_")]
+        return self.pics
 
     def group(self, name: str) -> list[dict]:
         ret = [p for p in self.pics if p["group"] == name]
@@ -129,16 +139,21 @@ def _read_context_pics(folder: Path) -> PicsContext:
     finally:
         os.chdir(str(cwd))
 
+@dataclass
+class LaudoContext:
+    ctx: dict
+    replaces: int
 
-def _build_context(folder: Path) -> dict:
+def _build_context(folder: Path) -> LaudoContext:
     context_folder = folder / "context"
     if not context_folder.is_dir():
         context_folder = folder
     ctx_vars = _parse_context_txt(context_folder)
     ctx_vars.update(_read_context_json(context_folder))
-    ctx_vars.update(_read_context_markdown(context_folder, ctx_vars))
+    markdown_content = _read_context_markdown(context_folder, ctx_vars)
+    ctx_vars.update(markdown_content.sections)
     ctx_vars["pics"] = _read_context_pics(folder)
-    return ctx_vars
+    return LaudoContext(ctx=ctx_vars, replaces=markdown_content.replaces)
 
 
 def render_docx(template_path: Path, context: dict, output_path: Path, replace_references=True) -> Path:
@@ -165,9 +180,11 @@ def render_docx(template_path: Path, context: dict, output_path: Path, replace_r
         shutil.rmtree(temp_folder, ignore_errors=True)
 
 
-def render_doc(template_path: Path, context: dict, output_path: Path, replace_references=True) -> Path:
-    render_docx(template_path, context, output_path, False)
-    return render_docx(output_path, context, output_path, replace_references)
+def render_doc(template_path: Path, context: LaudoContext, output_path: Path, replace_references=True) -> Path:
+    if context.replaces == 0:
+        return render_docx(template_path, context.ctx, output_path, replace_references)
+    render_docx(template_path, context.ctx, output_path, False)
+    return render_docx(output_path, context.ctx, output_path, replace_references)
 
 
 def gen_laudo(folder: Path, output: Path, *, debug: bool | Path = False, template: Path | None = None) -> Path:

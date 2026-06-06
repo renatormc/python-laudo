@@ -17,19 +17,19 @@ from laudo.core import (
 def test_build_context_empty(tmp_path: Path):
     folder = tmp_path / "empty"
     folder.mkdir()
-    ctx = _build_context(folder)
+    ctx = _build_context(folder).ctx
     assert isinstance(ctx.get("pics"), PicsContext)
     assert not ctx["pics"]
 
 
 def test_build_context_md_files(sample_project: Path):
-    ctx = _build_context(sample_project)
+    ctx = _build_context(sample_project).ctx
     assert ctx["intro"] == "# Introduction\nHello world."
     assert ctx["chapter_1"] == "## Chapter One\nContent here."
 
 
 def test_build_context_context_txt(sample_project: Path):
-    ctx = _build_context(sample_project)
+    ctx = _build_context(sample_project).ctx
     assert ctx["author"] == "John Doe"
     assert ctx["title"] == "My Doc"
 
@@ -39,7 +39,7 @@ def test_build_context_md_substitutes_vars(tmp_path: Path):
     folder.mkdir()
     (folder / "context.txt").write_text("name = John\n", encoding="utf-8")
     (folder / "greeting.md").write_text("Hello {{ name }}!", encoding="utf-8")
-    ctx = _build_context(folder)
+    ctx = _build_context(folder).ctx
     assert ctx["greeting"] == "Hello John!"
 
 
@@ -49,7 +49,7 @@ def test_build_context_context_txt_skips_invalid(tmp_path: Path):
     (folder / "context.txt").write_text(
         "valid = yes\n\n=bad\nnoequal\nkey= value\n", encoding="utf-8"
     )
-    ctx = _build_context(folder)
+    ctx = _build_context(folder).ctx
     assert ctx["valid"] == "yes"
     assert ctx["key"] == "value"
 
@@ -103,7 +103,7 @@ def test_read_context_markdown_with_sections(tmp_path: Path):
     folder.mkdir()
     content = "[[historico]]\n# Histórico\n\nConteúdo histórico.\n\n[[conclusao]]\n# Conclusão\n\nConclusão do caso."
     (folder / "report.md").write_text(content, encoding="utf-8")
-    ctx = _read_context_markdown(folder, {})
+    ctx = _read_context_markdown(folder, {}).sections
     assert "historico" in ctx
     assert "conclusao" in ctx
     assert "# Histórico" in ctx["historico"]
@@ -114,7 +114,7 @@ def test_read_context_markdown(tmp_path: Path):
     folder = tmp_path / "proj"
     folder.mkdir()
     (folder / "hello.md").write_text("# Hello {{ name }}", encoding="utf-8")
-    ctx = _read_context_markdown(folder, {"name": "World"})
+    ctx = _read_context_markdown(folder, {"name": "World"}).sections
     assert ctx["hello"] == "# Hello World"
 
 
@@ -175,7 +175,7 @@ def test_build_context_pics_no_fotos(tmp_path: Path):
     folder = tmp_path / "proj"
     folder.mkdir()
     (folder / "readme.md").write_text("# Hi", encoding="utf-8")
-    ctx = _build_context(folder)
+    ctx = _build_context(folder).ctx
     assert isinstance(ctx.get("pics"), PicsContext)
     assert not ctx["pics"]
 
