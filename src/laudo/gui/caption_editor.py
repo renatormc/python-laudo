@@ -155,10 +155,12 @@ class _ImageDialog(QDialog):
             self._load_image()
 
     def _go_next_or_close(self) -> None:
+        self._apply_caption()
+        QApplication.clipboard().setText(self._caption_edit.text())
         if self.index < len(self.cards) - 1:
-            self._go_next()
+            self.index += 1
+            self._load_image()
         else:
-            self._apply_caption()
             self.accept()
 
     def done(self, result: int) -> None:

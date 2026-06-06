@@ -58,13 +58,13 @@ def _cmd_install() -> None:
                 print(f"  {path_hint}")
 
 
-def _cmd_gen(dir_: Path | None, debug: Path | bool, pdf: bool, output: Path | None, template: Path | None) -> None:
+def _cmd_gen(dir_: Path | None, debug: Path | bool, pdf: bool, output: Path | None, template: Path | None, pos_edit: bool) -> None:
     if dir_ is not None:
         os.chdir(str(dir_))
     folder = Path.cwd()
     if output is None:
         output = folder / ("laudo.pdf" if pdf else "laudo.docx")
-    result = convert(folder, output, debug=debug, template=template)
+    result = convert(folder, output, debug=debug, template=template, pos_edit=pos_edit)
     print(f"Generated: {result}")
 
 
@@ -146,7 +146,7 @@ def main() -> None:
     gen_p.add_argument("--pdf", action="store_true", help="Generate PDF instead of DOCX (requires pandoc)")
     gen_p.add_argument("--output", type=Path, default=None, help="Output file path (default: laudo.docx or laudo.pdf in working directory)")
     gen_p.add_argument("--template", type=Path, default=None, help="Path to template file (default: template.docx in project folder)")
-
+    gen_p.add_argument("--pos-edit", action="store_true", help="Enable position-based editing")
     cap_p = sub.add_parser("captions", help="Open the caption editor GUI.")
     cap_p.add_argument("--dir", type=_existing_dir, default=None, help="Working directory (default: current directory)")
 
@@ -173,7 +173,7 @@ def main() -> None:
         case "install":
             _cmd_install()
         case "gen":
-            _cmd_gen(args.dir, args.debug, args.pdf, args.output, args.template)
+            _cmd_gen(args.dir, args.debug, args.pdf, args.output, args.template, args.pos_edit)
         case "captions":
             _cmd_captions(args.dir)
         case "template":

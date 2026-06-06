@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import sys
 from pathlib import Path
 from docx import Document
 from docx.document import Document as DocumentObject
@@ -22,6 +23,12 @@ class Keys:
     objects: dict[str, list[ObjectNamed]]
     references: list[str]
     all_keys: list[str]
+
+@dataclass
+class ReferenceReplaceResult:
+    replaces: dict[str, str]
+    not_found: list[str]
+    duplicates: list[ObjectNamed]
 
 
 class DocxReferenceReplacer:
@@ -67,7 +74,7 @@ class DocxReferenceReplacer:
                     ret.references.append(key)
         return ret
 
-    def get_replacements(self, text: str) -> dict[str, str]:
+    def get_replacements(self, text: str) -> ReferenceReplaceResult:
         keys = self.get_all_keys(text)
 
         replaces: dict[str, str] = {}
@@ -83,22 +90,23 @@ class DocxReferenceReplacer:
             except KeyError:
                 not_found.append(key)
         duplicates = self.check_duplicates(keys)
-        lines: list[str] = []
-        if duplicates:
-            lines = [f"A referência \"{obj.label}- {obj.refname}\" está duplicada" for obj in duplicates]
-        if not_found:
-            lines += [f"Referência \"{var}\" não encontrada." for var in not_found]
-        if lines:
-            raise Exception("\n".join(lines))
-        return replaces
+        return ReferenceReplaceResult(replaces=replaces, not_found=not_found, duplicates=duplicates)
+       
 
-    def replace_in_doc(self, doc: DocumentObject) -> None:
+    def replace_in_doc(self, doc: DocumentObject) -> list[str]:
         replaces = self.get_replacements(doc._element.xml)
-        docx_replace(doc, **replaces)
+        lines = [f"Referência \"{var}\" não encontrada." for var in replaces.not_found] + [ f"Referência \"{obj.var_complete}\" do tipo \"{obj.label}\" está duplicada." for obj in replaces.duplicates]
+        docx_replace(doc, **replaces.replaces)
+        return lines
 
     def replace_references(self, path: Path, dest: Path | None = None) -> None:
         if not dest:
             dest = path
         doc = Document(str(path))
-        self.replace_in_doc(doc)
+        errors = self.replace_in_doc(doc)
+        if errors:
+            print("Erros encontrados durante a substituição de referências:")
+            for error in errors:
+                print(f"- {error}")
+            sys.exit(1)
         doc.save(str(dest))

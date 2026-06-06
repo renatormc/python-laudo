@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import os
 import re
 import shutil
+import sys
 import tempfile
 from pathlib import Path
 import json
@@ -173,7 +174,12 @@ def render_docx(template_path: Path, context: dict, output_path: Path, replace_r
         renv.tpl.render(context, jinja_env=renv.jinja_env)
         if replace_references:
             dr = DocxReferenceReplacer()
-            dr.replace_in_doc(renv.tpl.docx)
+            errors = dr.replace_in_doc(renv.tpl.docx)
+            if errors:
+                print("Erros encontrados durante a substituição de referências:")
+                for error in errors:
+                    print(f"- {error}")
+                sys.exit(1)
         renv.tpl.save(str(output_path))
         return output_path
     finally:
@@ -187,7 +193,7 @@ def render_doc(template_path: Path, context: LaudoContext, output_path: Path, re
     return render_docx(output_path, context.ctx, output_path, replace_references)
 
 
-def gen_laudo(folder: Path, output: Path, *, debug: bool | Path = False, template: Path | None = None) -> Path:
+def gen_laudo(folder: Path, output: Path, *, debug: bool | Path = False, template: Path | None = None, pos_edit: bool = False) -> Path:
     if template is not None:
         template_path = template
     else:
@@ -216,11 +222,11 @@ def gen_laudo(folder: Path, output: Path, *, debug: bool | Path = False, templat
                 print("---------------")
     if output.suffix == ".pdf":
         doc_path = output.with_suffix(template_path.suffix)
-        render_doc(template_path, context, doc_path)
+        render_doc(template_path, context, doc_path, replace_references=not pos_edit)
         from .pdf import convert_to_pdf
 
         result = convert_to_pdf(doc_path, output)
         doc_path.unlink()
         return result
 
-    return render_doc(template_path, context, output)
+    return render_doc(template_path, context, output, replace_references=not pos_edit)
