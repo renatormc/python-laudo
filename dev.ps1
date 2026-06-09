@@ -12,29 +12,28 @@ switch ($command) {
         uv run pytest $rest
     }
     "sync" {
-        uv sync $rest
-    }
-    "build" {
-        uv build $rest
+        uv sync
     }
     "publish" {
-        Write-Host "→ Building package..."
-        uv build --quiet
-        Write-Host "→ Publishing to PyPI..."
+        Write-Host "Building package..."
+        uv build
+        Write-Host "Publishing to PyPI..."
         uv publish $rest
     }
-    "run" {
-        uv run laudo $rest
+    "copy-libs" {
+        rclone sync "$SRCDIR/odttpl/src/odttpl" "$PROJECT_ROOT/src/laudo/odttpl"
     }
-    default {
+    "help" {
         Write-Host "Usage: $($MyInvocation.MyCommand.Name) <command> [args...]"
         Write-Host ""
         Write-Host "Commands:"
         Write-Host "  test         Run tests (passes extra args to pytest)"
         Write-Host "  sync         Sync dependencies"
-        Write-Host "  build        Build package (sdist + wheel)"
         Write-Host "  publish      Upload to PyPI"
         Write-Host "  run [args]   Run laudo CLI"
         exit 1
+    }
+    default {
+        uv run laudo $args
     }
 }
