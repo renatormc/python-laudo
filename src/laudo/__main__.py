@@ -24,12 +24,12 @@ def _cmd_install() -> None:
     project_root = _find_project_root()
 
     if os.name == "nt":
-        script = bindir / "laudo.ps1"
-        content = f"& uv run --project {project_root} laudo @args\n"
+        script = bindir / "laudo.bat"
+        content = f"@uv run --project {project_root} laudo %*\n"
         script.write_text(content.lstrip())
         print(f"Installed laudo wrapper at {script}")
         path_sep = ";"
-        path_hint = f"$env:Path = \"{bindir};$env:Path\""
+        path_hint = f"set PATH={bindir};%PATH%"
     else:
         script = bindir / "laudo"
         content = f"#!/usr/bin/env bash\nexec uv run --project {project_root} laudo \"$@\"\n"
@@ -42,7 +42,7 @@ def _cmd_install() -> None:
     if str(bindir) not in os.environ.get("PATH", "").split(path_sep):
         print(f"Warning: {bindir} is not in your PATH.", file=sys.stderr)
         if os.name == "nt":
-            print("Add this to your PowerShell profile:")
+            print("Add this to your PATH (Command Prompt: set PATH=... or via System Settings):")
             print(f"  {path_hint}")
         else:
             shell = Path(os.environ.get("SHELL", "/bin/bash")).name
