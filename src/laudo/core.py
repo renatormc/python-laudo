@@ -79,11 +79,13 @@ class MarkdownContent:
 
 def _read_context_markdown(folder: Path, ctx_vars: dict) -> MarkdownContent:
     ctx: dict = {}
+    replaces = 0
     for md_file in sorted(folder.glob("*.md")):
         key = md_file.stem.replace(" ", "_")
         content = md_file.read_text(encoding="utf-8")
         content = Template(content).render(ctx_vars)
-        content, replaces = _replace_pos_vars(content)
+        content, n = _replace_pos_vars(content)
+        replaces += n
         parts = _read_markdown(content)
         if isinstance(parts, dict):
             ctx.update(parts)

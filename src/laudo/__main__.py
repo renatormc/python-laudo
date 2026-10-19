@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 from . import convert
-from .core import _parse_context_txt
+from .core import PicsContext, _build_context, _parse_context_txt
 
 
 def _find_project_root() -> Path:
@@ -31,7 +31,7 @@ def _cmd_install() -> None:
         path_sep = ";"
         path_hint = f"set PATH={bindir};%PATH%"
     else:
-        script = bindir / "laudo"
+        script = bindir / "laudo-dev"
         content = f"#!/usr/bin/env bash\nexec uv run --project {project_root} laudo \"$@\"\n"
         script.write_text(content.lstrip())
         script.chmod(script.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
@@ -93,6 +93,29 @@ def _cmd_vars(dir_: Path | None) -> None:
     folder = Path.cwd()
     ctx = _parse_context_txt(folder)
     print(json.dumps(ctx, indent=2, ensure_ascii=False))
+
+
+def _json_default(obj: object) -> object:
+    if isinstance(obj, PicsContext):
+        return obj.all()
+    if isinstance(obj, Path):
+        return str(obj)
+    return repr(obj)
+
+
+def _cmd_context(dir_: Path | None, output: Path | None) -> None:
+    if output is not None:
+        output = output.resolve()
+    if dir_ is not None:
+        os.chdir(str(dir_))
+    folder = Path.cwd()
+    context = _build_context(folder)
+    formatted = json.dumps(context.ctx, indent=2, ensure_ascii=False, default=_json_default)
+    if output is not None:
+        output.write_text(formatted, encoding="utf-8")
+        print(f"Context written to {output}")
+    else:
+        print(formatted)
 
 
 def _cmd_init(dir_: Path | None, name: str) -> None:
@@ -157,6 +180,10 @@ def main() -> None:
     vars_p = sub.add_parser("vars", help="Print context.txt variables as JSON.")
     vars_p.add_argument("--dir", type=_existing_dir, default=None, help="Working directory (default: current directory)")
 
+    ctx_p = sub.add_parser("context", help="Print the template context used to render the docx as JSON.")
+    ctx_p.add_argument("output", nargs="?", type=Path, default=None, help="Save the context as JSON to this file instead of printing it")
+    ctx_p.add_argument("--dir", type=_existing_dir, default=None, help="Working directory (default: current directory)")
+
     init_p = sub.add_parser("init", help="Initialize project from a template: saves template name and copies template files.")
     init_p.add_argument("name", help="Template name (without extension)")
     init_p.add_argument("--dir", type=_existing_dir, default=None, help="Working directory (default: current directory)")
@@ -180,6 +207,8 @@ def main() -> None:
             _cmd_template(args.dir, args.name)
         case "vars":
             _cmd_vars(args.dir)
+        case "context":
+            _cmd_context(args.dir, args.output)
         case "init":
             _cmd_init(args.dir, args.name)
 

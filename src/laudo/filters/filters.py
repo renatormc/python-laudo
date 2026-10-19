@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from dateutil import parser
 from .helpers_filters import *
 import math
 from pathlib import Path
@@ -18,6 +19,19 @@ nome_meses = [
     'novembro',
     'dezembro'
 ]
+
+
+def parse_data(value):
+    if not isinstance(value, str):
+        return value
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        pass
+    try:
+        return parser.parse(value, dayfirst=True)
+    except (ValueError, OverflowError):
+        return None
 
 
 class Filters:
@@ -56,9 +70,9 @@ class Filters:
         return f"{dia} ({dia_extenso}) dias do mês de {nome_meses[value.month - 1]} do ano de {value.year} ({get_extenso(value.year)})"
 
     def data_mes_extenso(self, value):
+        value = parse_data(value)
         if not isinstance(value, datetime) and not isinstance(value, date):
             return ""
-        value = convert_datetime(value)
         dia = str(value.day) if value.day > 1 else f"{value.day}°"
         return f"{dia} de {nome_meses[value.month - 1]} de {value.year}"
 
@@ -96,17 +110,10 @@ class Filters:
         return nome_meses[value.month-1]
 
     def data_simples(self, value):
-        if not value:
+        value = parse_data(value)
+        if not isinstance(value, datetime) and not isinstance(value, date):
             return ""
-        value = convert_datetime(value)
-        if isinstance(value, datetime):
-            return value.strftime("%d/%m/%Y")
-        try:
-            data = datetime.strptime(value, "%d/%m/%Y")
-            return data.strftime("%d/%m/%Y")
-        except Exception as e:
-            print(e)
-            pass
+        return value.strftime("%d/%m/%Y")
 
     def is_male(self, value):
         if isinstance(value, str):
