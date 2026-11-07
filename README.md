@@ -4,11 +4,38 @@ Convert markdown files to **docx** or **pdf** using `docxtpl` templates.
 
 ## Installation
 
+The recommended way to install the `laudo` CLI is with [pipx](https://pipx.pypa.io/), which installs it in an isolated environment and puts the command on your `PATH`:
+
 ```bash
-pip install laudo
+pipx install laudo
+```
+
+If `pipx` is not installed yet, on Ubuntu/Debian:
+
+```bash
+sudo apt update
+sudo apt install pipx
+pipx ensurepath
+```
+
+Restart your terminal afterwards so the `PATH` change takes effect. On other systems, see the [pipx installation guide](https://pipx.pypa.io/stable/installation/).
+
+To upgrade or uninstall:
+
+```bash
+pipx upgrade laudo
+pipx uninstall laudo
+```
+
+If Python 3.13+ is not your default interpreter, point pipx at it:
+
+```bash
+pipx install --python python3.13 laudo
 ```
 
 Requires **Python 3.13+** and **LibreOffice** for PDF output.
+
+> To use the [Python API](#python-api) from your own code, install `laudo` into that project's virtual environment instead (e.g. `uv add laudo` or `pip install laudo`).
 
 ## Usage
 
