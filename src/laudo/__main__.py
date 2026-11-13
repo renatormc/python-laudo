@@ -150,6 +150,40 @@ def _cmd_init(dir_: Path | None, name: str) -> None:
     print(f"Copied {copied} file(s) from {src} to {folder}")
 
 
+_RESOLUTION_CHOICES: tuple[int, ...] = (300, 450, 600, 800, 1024, 1280, 1600, 1920)
+_DEFAULT_RESOLUTION = 450
+
+
+def _ask_max_resolution() -> int:
+    if not sys.stdin.isatty():
+        return _DEFAULT_RESOLUTION
+    import inquirer  # type: ignore[import-untyped]
+
+    question = inquirer.List(
+        "max_resolution",
+        message="Maximum width/height in pixels",
+        choices=[(f"{r}px", r) for r in _RESOLUTION_CHOICES],
+        default=_DEFAULT_RESOLUTION,
+    )
+    answers = inquirer.prompt([question])
+    if answers is None:
+        sys.exit(1)
+    return int(answers["max_resolution"])
+
+
+def _cmd_reduce_images(source: Path, dest: Path, max_resolution: int | None) -> None:
+    from .reduce import reduce_images
+
+    if max_resolution is None:
+        max_resolution = _ask_max_resolution()
+    try:
+        reduce_images(source, dest, max_resolution=max_resolution)
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    print(f"Reduced images saved to {dest}")
+
+
 def _existing_dir(value: str) -> Path:
     p = Path(value)
     if not p.is_dir():
@@ -188,6 +222,11 @@ def main() -> None:
     init_p.add_argument("name", help="Template name (without extension)")
     init_p.add_argument("--dir", type=_existing_dir, default=None, help="Working directory (default: current directory)")
 
+    red_p = sub.add_parser("reduce-images", help="Reduce image sizes in a folder or inside a .docx file.")
+    red_p.add_argument("source", type=Path, help="Source folder or .docx file")
+    red_p.add_argument("dest", type=Path, help="Destination folder or .docx file (may be the same as source)")
+    red_p.add_argument("--max", dest="max_resolution", type=int, default=None, help="Maximum width/height in pixels (prompted if omitted)")
+
     sub.add_parser("install", help="Install the laudo wrapper script to ~/.local/bin.")
 
     args = parser.parse_args()
@@ -211,6 +250,8 @@ def main() -> None:
             _cmd_context(args.dir, args.output)
         case "init":
             _cmd_init(args.dir, args.name)
+        case "reduce-images":
+            _cmd_reduce_images(args.source, args.dest, args.max_resolution)
 
 
 if __name__ == "__main__":

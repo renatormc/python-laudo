@@ -122,6 +122,7 @@ laudo [command] [options]
 - `gen [--dir <folder>] [--debug]` — generate docx/pdf from markdown files (default: current directory).
 - `captions [--dir <folder>]` — open the caption editor (PySide6).
 - `template <name> [--dir <folder>]` — set the template name for a folder (creates `.laudo/.template` file).
+- `reduce-images <source> <dest> [--max N]` — reduce image sizes: folder → folder (recursive) or `.docx`/`.odt` → same format (embedded images). If `--max` is omitted, prompts for it with an `inquirer` list (default 450px; non-interactive stdin uses 450). `dest` may equal `source`.
 - `install` — install the `laudo` wrapper script to `~/.local/bin/`.
 
 ## GUI (`gui/`)

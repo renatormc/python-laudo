@@ -4,13 +4,13 @@ Convert markdown files to **docx** or **pdf** using `docxtpl` templates.
 
 ## Installation
 
-The recommended way to install the `laudo` CLI is with [pipx](https://pipx.pypa.io/), which installs it in an isolated environment and puts the command on your `PATH`:
+The recommended way to install the `laudo` CLI is with [pipx](https://pipx.pypa.io/), which installs it in an isolated environment and puts the command on your `PATH`.
 
-```bash
-pipx install laudo
-```
+Requires **Python 3.13+** and **LibreOffice** (only for PDF output).
 
-If `pipx` is not installed yet, on Ubuntu/Debian:
+### 1. Install pipx
+
+Ubuntu/Debian:
 
 ```bash
 sudo apt update
@@ -18,13 +18,54 @@ sudo apt install pipx
 pipx ensurepath
 ```
 
-Restart your terminal afterwards so the `PATH` change takes effect. On other systems, see the [pipx installation guide](https://pipx.pypa.io/stable/installation/).
-
-To upgrade or uninstall:
+Arch Linux:
 
 ```bash
-pipx upgrade laudo
-pipx uninstall laudo
+sudo pacman -S python-pipx
+pipx ensurepath
+```
+
+macOS (Homebrew):
+
+```bash
+brew install pipx
+pipx ensurepath
+```
+
+Windows (PowerShell):
+
+```powershell
+py -m pip install --user pipx
+py -m pipx ensurepath
+```
+
+Restart your terminal afterwards so the `PATH` change takes effect. For other systems, see the [pipx installation guide](https://pipx.pypa.io/stable/installation/).
+
+### 2. Install laudo
+
+From PyPI:
+
+```bash
+pipx install laudo
+```
+
+A specific version:
+
+```bash
+pipx install laudo==0.2.3
+```
+
+The latest code from GitHub:
+
+```bash
+pipx install git+https://github.com/renatormc/laudo.git
+```
+
+From a local clone, in editable mode (code changes take effect without reinstalling):
+
+```bash
+git clone https://github.com/renatormc/laudo.git
+pipx install --editable ./laudo
 ```
 
 If Python 3.13+ is not your default interpreter, point pipx at it:
@@ -33,7 +74,21 @@ If Python 3.13+ is not your default interpreter, point pipx at it:
 pipx install --python python3.13 laudo
 ```
 
-Requires **Python 3.13+** and **LibreOffice** for PDF output.
+Check the installation:
+
+```bash
+laudo --help
+```
+
+### 3. Upgrade or uninstall
+
+```bash
+pipx upgrade laudo                # upgrade to the latest release
+pipx install --force laudo        # reinstall (e.g. after switching source)
+pipx uninstall laudo
+```
+
+`pipx list` shows the installed version and the Python interpreter in use.
 
 > To use the [Python API](#python-api) from your own code, install `laudo` into that project's virtual environment instead (e.g. `uv add laudo` or `pip install laudo`).
 
@@ -47,6 +102,7 @@ laudo captions [--dir <folder>]
 laudo template <name> [--dir <folder>]
 laudo vars [--dir <folder>]
 laudo init <name> [--dir <folder>]
+laudo reduce-images <source> <dest> [--max <pixels>]
 laudo install
 ```
 
@@ -58,6 +114,18 @@ from laudo import convert
 convert("my_project/", "output.docx")
 convert("my_project/", "output.pdf")
 ```
+
+### Reducing images
+
+`laudo reduce-images` shrinks images so that neither side exceeds the chosen size (aspect ratio is kept):
+
+```bash
+laudo reduce-images fotos/ fotos_small/          # folder -> folder (recursive)
+laudo reduce-images report.docx report.docx      # images embedded in a .docx/.odt
+laudo reduce-images report.docx small.docx --max 600
+```
+
+Without `--max`, an interactive list lets you pick the size (default 450px).
 
 ## Input Folder Structure
 
