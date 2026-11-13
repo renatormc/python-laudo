@@ -119,6 +119,7 @@ Uses **click**:
 laudo [command] [options]
 ```
 
+- `gui [--dir <folder>]` — open the main PySide6 window (**default when no command is given**). Buttons for gen, captions, vars, context and reduce-images; tasks run in a background thread with a spinner, and errors are shown in a dialog.
 - `gen [--dir <folder>] [--debug]` — generate docx/pdf from markdown files (default: current directory).
 - `captions [--dir <folder>]` — open the caption editor (PySide6).
 - `template <name> [--dir <folder>]` — set the template name for a folder (creates `.laudo/.template` file).

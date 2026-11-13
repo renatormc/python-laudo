@@ -97,6 +97,7 @@ pipx uninstall laudo
 ### CLI
 
 ```bash
+laudo [gui] [--dir <folder>]               # main GUI (default with no command)
 laudo gen [--dir <folder>] [--debug] [--pdf] [--output <path>] [--template <path>]
 laudo captions [--dir <folder>]
 laudo template <name> [--dir <folder>]

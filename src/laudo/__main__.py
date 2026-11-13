@@ -76,6 +76,12 @@ def _cmd_captions(dir_: Path | None) -> None:
     run_gui(Path.cwd())
 
 
+def _cmd_gui(dir_: Path | None) -> None:
+    from .gui import run_main
+
+    run_main(dir_.resolve() if dir_ is not None else None)
+
+
 def _cmd_template(dir_: Path | None, name: str) -> None:
     if dir_ is not None:
         os.chdir(str(dir_))
@@ -207,6 +213,9 @@ def main() -> None:
     cap_p = sub.add_parser("captions", help="Open the caption editor GUI.")
     cap_p.add_argument("--dir", type=_existing_dir, default=None, help="Working directory (default: current directory)")
 
+    gui_p = sub.add_parser("gui", help="Open the main GUI (default when no command is given).")
+    gui_p.add_argument("--dir", type=_existing_dir, default=None, help="Working directory (default: current directory)")
+
     tpl_p = sub.add_parser("template", help="Set the template name for the current folder (creates .template file).")
     tpl_p.add_argument("name", help="Template name (without extension)")
     tpl_p.add_argument("--dir", type=_existing_dir, default=None, help="Working directory (default: current directory)")
@@ -232,8 +241,8 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.command is None:
-        parser.print_help()
-        sys.exit(1)
+        _cmd_gui(None)
+        return
 
     match args.command:
         case "install":
@@ -242,6 +251,8 @@ def main() -> None:
             _cmd_gen(args.dir, args.debug, args.pdf, args.output, args.template, args.pos_edit)
         case "captions":
             _cmd_captions(args.dir)
+        case "gui":
+            _cmd_gui(args.dir)
         case "template":
             _cmd_template(args.dir, args.name)
         case "vars":

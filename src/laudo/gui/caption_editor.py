@@ -297,7 +297,7 @@ class CaptionEditor(QWidget):
 
 def run(dir_path: Path | None = None) -> None:
     app = QApplication(sys.argv)
-    icon_path = Path(__file__).parent / "assets" / "laudo.png"
+    icon_path = Path(__file__).parent / "assets" / "icon.png"
     if icon_path.is_file():
         app.setWindowIcon(QIcon(str(icon_path)))
     window = CaptionEditor(dir_path)
