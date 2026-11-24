@@ -145,6 +145,12 @@ A PySide6 caption editor that displays all images from `fotos/` as thumbnails wi
 - Business logic in `core.py`, I/O and assets in `assets.py`, pdf conversion in `pdf.py`.
 - Main function `convert()` lives in `__init__.py` as the public entry point.
 
+## User documentation
+
+- User-facing documentation must be written in **Brazilian Portuguese (pt-BR)**: `README.md`, `docs/user-guide.md`, `docs/install-pipx.md` and any new file in `docs/`. Code, comments and this file stay in English.
+- `README.md` is also the PyPI page: keep it short (installation with `pipx install laudo`, quick start) and link to `docs/` with absolute URLs (`https://github.com/renatormc/docmd/blob/main/docs/...`); relative links break on PyPI.
+- When changing behavior (filters, globals, CLI options, markdown syntax), update `docs/user-guide.md` in the same change.
+
 ## Dependencies
 
 - `docxtpl` — Jinja2-based docx template engine

@@ -1,386 +1,386 @@
-# laudo — User guide
+# laudo — Guia do usuário
 
-Everything you can do with laudo, from the folder layout to every filter available in templates.
+Tudo o que dá para fazer com o laudo, da estrutura da pasta a cada filtro disponível nos modelos.
 
-- [How it works](#how-it-works)
-- [Project folder](#project-folder)
-- [The main window](#the-main-window)
-- [Caption editor](#caption-editor)
-- [Writing the text (`.md`)](#writing-the-text-md)
-- [Variables](#variables)
-- [Photos](#photos)
-- [Automatic numbering (`${...}`)](#automatic-numbering-)
-- [Templates](#templates)
-- [Filters](#filters)
-- [Functions](#functions)
-- [Command line](#command-line)
-- [Troubleshooting](#troubleshooting)
+- [Como funciona](#como-funciona)
+- [Pasta do projeto](#pasta-do-projeto)
+- [Janela principal](#janela-principal)
+- [Editor de legendas](#editor-de-legendas)
+- [Escrevendo o texto](#escrevendo-o-texto)
+- [Variáveis](#variáveis)
+- [Fotos](#fotos)
+- [Numeração automática](#numeração-automática)
+- [Modelos](#modelos)
+- [Filtros](#filtros)
+- [Funções](#funções)
+- [Linha de comando](#linha-de-comando)
+- [Solução de problemas](#solução-de-problemas)
 
 ---
 
-## How it works
+## Como funciona
 
-1. laudo reads your project folder: variables, text files (`.md`) and photos.
-2. It fills a Word template (`template.docx`) with that content.
-3. It numbers photos and references (`Foto 1`, `Foto 2`…).
-4. It saves `laudo.docx`, or `laudo.pdf` (PDF needs LibreOffice).
+1. O laudo lê a pasta do projeto: variáveis, textos (`.md`) e fotos.
+2. Preenche um modelo do Word (`template.docx`) com esse conteúdo.
+3. Numera as fotos e as referências (`Foto 1`, `Foto 2`…).
+4. Salva o `laudo.docx`, ou o `laudo.pdf` (o PDF precisa do LibreOffice).
 
-## Project folder
+## Pasta do projeto
 
 ```
-my_report/
-├── template.docx        # Word template (see "Templates")
-├── context.txt          # variables: name = value
-├── dados.json           # (optional) structured data
-├── laudo.md             # your text (one or more .md files)
-├── fotos/               # photos; subfolders become groups
+meu_laudo/
+├── template.docx        # modelo do Word (veja "Modelos")
+├── context.txt          # variáveis: nome = valor
+├── dados.json           # (opcional) dados estruturados
+├── laudo.md             # o seu texto (um ou mais arquivos .md)
+├── fotos/               # fotos; subpastas viram grupos
 │   ├── porta.jpg
 │   └── local/
 │       ├── sala.jpg
 │       └── cozinha.jpg
-└── .laudo/              # created automatically: captions and image cache
+└── .laudo/              # criada automaticamente: legendas e cache de imagens
 ```
 
-- If a `context/` subfolder exists, `context.txt`, `.json` and `.md` files are read **from it** instead of the project folder.
-- `.laudo/` holds the captions (`pics.sqlite`) and the reduced copies of the photos (`thumbs/`). Don't delete it unless you want to lose the captions.
+- Se existir uma subpasta `context/`, os arquivos `context.txt`, `.json` e `.md` são lidos **dela**, e não da pasta do projeto.
+- A pasta `.laudo/` guarda as legendas (`pics.sqlite`) e as cópias reduzidas das fotos (`thumbs/`). Não a apague, a menos que queira perder as legendas.
 
-## The main window
+## Janela principal
 
-Run `laudo` inside the project folder (or choose the folder with **Selecionar…**).
+Execute `laudo` dentro da pasta do projeto (ou escolha a pasta em **Selecionar…**).
 
-| Button | What it does |
+| Botão | O que faz |
 |---|---|
-| **Gerar laudo** | creates `laudo.docx` in the folder. Tick **PDF** to create `laudo.pdf` instead |
-| **Legendas** | opens the caption editor |
-| **Variáveis** | shows the variables read from `context.txt` |
-| **Contexto** | shows **everything** available to the template (variables, texts, photos). Useful to find a variable's exact name |
-| **Reduzir imagens** | shrinks large images in a folder, or inside a `.docx`/`.odt` |
+| **Gerar laudo** | cria o `laudo.docx` na pasta. Marque **PDF** para criar o `laudo.pdf` |
+| **Legendas** | abre o editor de legendas |
+| **Variáveis** | mostra as variáveis lidas do `context.txt` |
+| **Contexto** | mostra **tudo** o que está disponível para o modelo (variáveis, textos, fotos). Útil para descobrir o nome exato de uma variável |
+| **Reduzir imagens** | reduz imagens grandes de uma pasta, ou dentro de um `.docx`/`.odt` |
 
-Tasks run in the background. If something fails, a dialog shows the error and its details.
+As tarefas rodam em segundo plano. Se algo falhar, uma janela mostra o erro e os detalhes.
 
-## Caption editor
+## Editor de legendas
 
-Opened with **Legendas** (or `laudo captions`).
+Aberto pelo botão **Legendas** (ou por `laudo captions`).
 
-- Shows every photo in `fotos/` with a caption field.
-- The search box filters by file name or caption.
-- Click a photo to see it large. In that view:
-  - **Anterior / Próxima** navigate between photos.
-  - **Enter** keeps the caption, copies it to the clipboard and moves to the next photo.
-- Click **Salvar** to store the captions. Closing without saving discards the changes.
+- Mostra todas as fotos de `fotos/`, cada uma com um campo de legenda.
+- A caixa de busca filtra pelo nome do arquivo ou pela legenda.
+- Clique numa foto para vê-la grande. Nessa tela:
+  - **Anterior / Próxima** navegam entre as fotos.
+  - **Enter** guarda a legenda, copia o texto para a área de transferência e passa para a próxima foto.
+- Clique em **Salvar** para gravar as legendas. Fechar sem salvar descarta as alterações.
 
-The caption appears next to the photo in the report as `Foto 3 - <caption>`.
+No laudo, a legenda aparece junto da foto como `Foto 3 - <legenda>`.
 
-## Writing the text (`.md`)
+## Escrevendo o texto
 
-Each `.md` file becomes a variable named after the file (spaces become `_`):
+Cada arquivo `.md` vira uma variável com o nome do arquivo (espaços viram `_`):
 
-| File | Variable |
+| Arquivo | Variável |
 |---|---|
 | `laudo.md` | `laudo` |
 | `exame local.md` | `exame_local` |
 
-In the template, insert it with `{{p laudo|markdown }}`.
+No modelo, insira o texto com `{{p laudo|markdown }}`.
 
-### Supported formatting
+### Formatação suportada
 
-| You write | Result |
+| Você escreve | Resultado |
 |---|---|
-| `# Title` | heading level 1 (also `##` and `###`) |
-| `**text**` | **bold** |
-| `*text*` | *italic* |
-| `- item` | bullet list item |
-| blank line | ignored (each line is its own paragraph) |
+| `# Título` | título de nível 1 (também `##` e `###`) |
+| `**texto**` | **negrito** |
+| `*texto*` | *itálico* |
+| `- item` | item de lista com marcador |
+| linha em branco | ignorada (cada linha é um parágrafo) |
 
-Headings use the template's heading styles, so numbering and fonts come from the template.
+Os títulos usam os estilos de título do modelo, então a numeração e as fontes vêm do modelo.
 
-### Sections inside one file
+### Seções dentro de um arquivo
 
-A single `.md` can feed several variables. Start each part with `[[name]]`:
+Um único `.md` pode alimentar várias variáveis. Comece cada parte com `[[nome]]`:
 
 ```
 [[historico]]
-Text of the history…
+Texto do histórico…
 
 [[conclusao]]
-Text of the conclusion…
+Texto da conclusão…
 ```
 
-This creates the variables `historico` and `conclusao` (the file-name variable is **not** created in this case).
+Isso cria as variáveis `historico` e `conclusao` (nesse caso, a variável com o nome do arquivo **não** é criada).
 
-### Variables inside the text
+### Variáveis dentro do texto
 
-Write `{{ variable }}` to use any variable from `context.txt` or from a `.json` file:
+Escreva `{{ variavel }}` para usar qualquer variável do `context.txt` ou de um arquivo `.json`:
 
 ```
-The examination started at {{ inicio_pericia }}.
+Os exames foram iniciados às {{ inicio_pericia }}.
 ```
 
-Inside `.md` files you can use Jinja's built-in filters (`{{ nome|upper }}`), but **not** the laudo [filters](#filters). Those only work in the template.
+Dentro dos arquivos `.md` você pode usar os filtros nativos do Jinja (`{{ nome|upper }}`), mas **não** os [filtros](#filtros) do laudo. Esses só funcionam no modelo.
 
-## Variables
+## Variáveis
 
 ### `context.txt`
 
 ```
-# lines starting with # are comments
+# linhas começando com # são comentários
 requisitante = Delegacia de Anápolis
 data_pericia = 15/10/2026
 cols = 2
 ```
 
-- One `name = value` per line. Lines without `=` are ignored.
-- Every value is **text**. Use a filter when you need a date or a number: `{{ data_pericia|data_simples }}`, `{{ cols|int }}`.
+- Um `nome = valor` por linha. Linhas sem `=` são ignoradas.
+- Todo valor é **texto**. Use um filtro quando precisar de uma data ou de um número: `{{ data_pericia|data_simples }}`, `{{ cols|int }}`.
 
-### `.json` files
+### Arquivos `.json`
 
-Each `.json` file becomes a variable named after the file. With `pessoas.json`:
+Cada arquivo `.json` vira uma variável com o nome do arquivo. Com o `pessoas.json`:
 
 ```json
 [{"nome": "João", "gender": "M"}, {"nome": "Maria", "gender": "F"}]
 ```
 
-you can write `{% for p in pessoas %}{{ p.nome }}{% endfor %}` in the template.
+você pode escrever `{% for p in pessoas %}{{ p.nome }}{% endfor %}` no modelo.
 
-## Photos
+## Fotos
 
-Put the images (`.jpg`, `.jpeg`, `.png`, `.tif`, `.tiff`, `.webp`) in `fotos/`. Subfolders become **groups**: the photos in `fotos/local/` belong to the group `local`.
+Coloque as imagens (`.jpg`, `.jpeg`, `.png`, `.tif`, `.tiff`, `.webp`) em `fotos/`. Subpastas viram **grupos**: as fotos de `fotos/local/` pertencem ao grupo `local`.
 
-The **name** of a photo is its file name without the extension: `fotos/local/sala.jpg` → `sala`. Names must be unique, even across subfolders.
+O **nome** de uma foto é o nome do arquivo sem a extensão: `fotos/local/sala.jpg` → `sala`. Os nomes precisam ser únicos, mesmo entre subpastas diferentes.
 
-Large photos are inserted as reduced copies (at most 450 px). Your originals are never changed.
+Fotos grandes são inseridas como cópias reduzidas (no máximo 450 px). Os originais nunca são alterados.
 
-### In the text (`.md`)
+### No texto (`.md`)
 
-| You write | Result |
+| Você escreve | Resultado |
 |---|---|
-| `image(sala)` | the photo `sala` with its caption |
-| `image_group(local, 2)` | every photo of the group `local`, 2 per row (any number of columns works) |
-| `image_group(local, cols)` | number of columns taken from a variable |
+| `image(sala)` | a foto `sala` com a legenda |
+| `image_group(local, 2)` | todas as fotos do grupo `local`, 2 por linha (qualquer número de colunas funciona) |
+| `image_group(local, cols)` | número de colunas vindo de uma variável |
 
-Write these **alone on their own line**. Otherwise generation stops and shows the line to fix.
+Escreva esses comandos **sozinhos na linha**. Caso contrário, a geração para e mostra a linha a corrigir.
 
-### In the template
+### No modelo
 
-The variable `pics` gives access to every photo:
+A variável `pics` dá acesso a todas as fotos:
 
-| Expression | Result |
+| Expressão | Resultado |
 |---|---|
-| `pics.all()` | list of all photos |
-| `pics.group("local")` | photos of one group (empty list if none) |
-| `pics.get("sala")` | one photo, or nothing if it doesn't exist |
-| `pics.require("sala")` / `pics.require_group("local")` | same, but stops with a clear error if missing |
-| `{% if pics %}` | true when there is at least one photo |
+| `pics.all()` | lista com todas as fotos |
+| `pics.group("local")` | fotos de um grupo (lista vazia se não houver) |
+| `pics.get("sala")` | uma foto, ou nada se ela não existir |
+| `pics.require("sala")` / `pics.require_group("local")` | o mesmo, mas para com um erro claro se faltar |
+| `{% if pics %}` | verdadeiro quando há pelo menos uma foto |
 
-Each photo has: `refname` (name), `caption`, `group`, `label` (`"Foto"`), `path` (original file), `reduced` (copy used in the document) and `thumb` (thumbnail).
+Cada foto tem: `refname` (nome), `caption` (legenda), `group` (grupo), `label` (`"Foto"`), `path` (arquivo original), `reduced` (cópia usada no documento) e `thumb` (miniatura).
 
-To insert a photo grid directly in the template:
+Para inserir uma grade de fotos diretamente no modelo:
 
 ```
 {{p subdoc("image_group", pics=pics.group("anexo"), cols=2) }}
 ```
 
-`image_group` also accepts `image_width=<mm>` to force the width of every photo.
+O `image_group` também aceita `image_width=<mm>` para forçar a largura de todas as fotos.
 
-To hide a photo from a list, start its name with `_` and use the `filter_dashes` function: `filter_dashes(pics.all(), "refname")`.
+Para esconder uma foto de uma lista, comece o nome dela com `_` e use a função `filter_dashes`: `filter_dashes(pics.all(), "refname")`.
 
-## Automatic numbering (`${...}`)
+## Numeração automática
 
-Every photo inserted with `image`, `image_group` or `caption(...)` gets a number, in the order it appears in the document: `Foto 1`, `Foto 2`…
+Toda foto inserida com `image`, `image_group` ou `caption(...)` recebe um número, na ordem em que aparece no documento: `Foto 1`, `Foto 2`…
 
-To mention a photo in the text, write its name between `${ }`:
-
-```
-As shown in Foto ${sala}, the door was open.
-```
-
-→ "As shown in Foto 3, the door was open."
-
-You can number other things the same way. Write `${Label|name}` where the item appears and `${name}` where you mention it:
+Para citar uma foto no texto, escreva o nome dela entre `${ }`:
 
 ```
-${Tabela|valores} Values found
+Conforme Foto ${sala}, a porta estava aberta.
+```
+
+→ "Conforme Foto 3, a porta estava aberta."
+
+Dá para numerar outras coisas do mesmo jeito. Escreva `${Rótulo|nome}` onde o item aparece e `${nome}` onde você o cita:
+
+```
+${Tabela|valores} Valores encontrados
 …
-see table ${valores}
+ver tabela ${valores}
 ```
 
-→ "Tabela 1 Values found … see table 1". Each label (`Foto`, `Tabela`, `Figura`…) has its own sequence.
+→ "Tabela 1 Valores encontrados … ver tabela 1". Cada rótulo (`Foto`, `Tabela`, `Figura`…) tem a sua própria sequência.
 
-Generation stops with an error when:
+A geração para com um erro quando:
 
-- a `${name}` refers to something that was never inserted, or
-- the same `${Label|name}` appears twice.
+- um `${nome}` cita algo que nunca foi inserido, ou
+- o mesmo `${Rótulo|nome}` aparece duas vezes.
 
-`laudo gen --pos-edit` skips this step and leaves the `${...}` markers in the document.
+O `laudo gen --pos-edit` pula essa etapa e deixa as marcações `${...}` no documento.
 
-## Templates
+## Modelos
 
-The template is a normal Word document with placeholders ([docxtpl](https://docxtpl.readthedocs.io/) / Jinja2 syntax):
+O modelo é um documento normal do Word com marcações (sintaxe do [docxtpl](https://docxtpl.readthedocs.io/) / Jinja2):
 
-| Syntax | Use |
+| Sintaxe | Uso |
 |---|---|
-| `{{ variable }}` | inserts a value |
-| `{{ variable\|filter }}` | inserts a value transformed by a [filter](#filters) |
-| `{{p laudo\|markdown }}` | inserts a `.md` text as formatted paragraphs (must be alone in the paragraph) |
-| `{%p if condition %}` … `{%p endif %}` | shows paragraphs only when the condition is true |
-| `{%p for item in list %}` … `{%p endfor %}` | repeats paragraphs for every item |
-| `{%tr for … %}` / `{%tc for … %}` | repeats table rows / columns |
-| `{{p subdoc("name", var=value) }}` | inserts another `.docx` (see below) |
-| `{{ image(path, width=50) }}` | inserts an image |
+| `{{ variavel }}` | insere um valor |
+| `{{ variavel\|filtro }}` | insere um valor transformado por um [filtro](#filtros) |
+| `{{p laudo\|markdown }}` | insere um texto `.md` como parágrafos formatados (precisa estar sozinho no parágrafo) |
+| `{%p if condicao %}` … `{%p endif %}` | mostra parágrafos só quando a condição é verdadeira |
+| `{%p for item in lista %}` … `{%p endfor %}` | repete parágrafos para cada item |
+| `{%tr for … %}` / `{%tc for … %}` | repete linhas / colunas de tabela |
+| `{{p subdoc("nome", var=valor) }}` | insere outro `.docx` (veja abaixo) |
+| `{{ image(caminho, width=50) }}` | insere uma imagem |
 
-### Which template is used
+### Qual modelo é usado
 
-1. `template.docx` in the project folder; otherwise
-2. the template named in `.laudo/.template`, looked up in `$LAUDOS_TEMPLATES_FOLDER/<name>/template.docx`.
+1. O `template.docx` da pasta do projeto; senão,
+2. o modelo indicado em `.laudo/.template`, procurado em `$LAUDOS_TEMPLATES_FOLDER/<nome>/template.docx`.
 
-`laudo gen --template <file>` uses a specific file instead.
+O `laudo gen --template <arquivo>` usa um arquivo específico.
 
-### Shared templates
+### Modelos compartilhados
 
-Keep a folder with one subfolder per template, and point the `LAUDOS_TEMPLATES_FOLDER` environment variable to it:
+Mantenha uma pasta com uma subpasta por modelo e aponte a variável de ambiente `LAUDOS_TEMPLATES_FOLDER` para ela:
 
 ```
-templates/
+modelos/
 └── local-de-crime/
     ├── template.docx
-    ├── context.txt      # copied into new projects
-    └── laudo.md         # copied into new projects
+    ├── context.txt      # copiado para os projetos novos
+    └── laudo.md         # copiado para os projetos novos
 ```
 
-In a new, empty project folder, `laudo init local-de-crime` selects the template and copies its other files (everything except `.docx`) into the project. `laudo template <name>` only selects the template, without copying anything.
+Numa pasta de projeto nova e vazia, `laudo init local-de-crime` seleciona o modelo e copia os outros arquivos dele (tudo, exceto `.docx`) para o projeto. O `laudo template <nome>` só seleciona o modelo, sem copiar nada.
 
-### Sub-documents (`subdoc`)
+### Subdocumentos (`subdoc`)
 
-`{{p subdoc("capa") }}` inserts `capa.docx`. It is looked up in the project folder, then in the shared template folder, then among the templates built into laudo (`image_group`).
+`{{p subdoc("capa") }}` insere o `capa.docx`. Ele é procurado na pasta do projeto, depois na pasta de modelos compartilhados e, por fim, entre os modelos que já vêm com o laudo (`image_group`).
 
-Pass values to the sub-document: `{{p subdoc("capa", titulo=nome_exame) }}`. Inside `capa.docx`, use `{{ titulo }}`.
+Para passar valores ao subdocumento: `{{p subdoc("capa", titulo=nome_exame) }}`. Dentro do `capa.docx`, use `{{ titulo }}`.
 
-### Images in the template
+### Imagens no modelo
 
-`{{ image(path, width=50) }}` inserts an image. The sizes are in **millimetres**.
+`{{ image(caminho, width=50) }}` insere uma imagem. Os tamanhos são em **milímetros**.
 
-- Give `width` **or** `height`, not both.
-- `max_height` / `max_width` limit the other side: `image(p.reduced, 150, max_height=220)`.
-- The file must exist. If it doesn't, the text `None` appears in its place.
+- Informe `width` (largura) **ou** `height` (altura), não os dois.
+- `max_height` / `max_width` limitam o outro lado: `image(p.reduced, 150, max_height=220)`.
+- O arquivo precisa existir. Se não existir, aparece o texto `None` no lugar.
 
-## Filters
+## Filtros
 
-Use them in the template as `{{ value|filter }}`, or with arguments as `{{ value|filter(arg) }}`. All of Jinja's [built-in filters](https://jinja.palletsprojects.com/en/stable/templates/#list-of-builtin-filters) (`upper`, `lower`, `title`, `default`, `int`, `join`, `length`, `replace`…) also work.
+Use-os no modelo como `{{ valor|filtro }}`, ou com argumentos como `{{ valor|filtro(arg) }}`. Todos os [filtros nativos do Jinja](https://jinja.palletsprojects.com/en/stable/templates/#list-of-builtin-filters) (`upper`, `lower`, `title`, `default`, `int`, `join`, `length`, `replace`…) também funcionam.
 
-### Text
+### Texto
 
-| Filter | Example | Result |
+| Filtro | Exemplo | Resultado |
 |---|---|---|
-| `markdown` | `{{p laudo\|markdown }}` | `.md` text as formatted paragraphs |
-| `not_null` | `{{ x\|not_null }}` | `""` when the value is empty (None) |
-| `xxx` | `{{ x\|xxx }}` | `XXX` when the value is empty (None) |
-| `str` | `{{ 12\|str }}` | converts to text |
+| `markdown` | `{{p laudo\|markdown }}` | texto `.md` como parágrafos formatados |
+| `not_null` | `{{ x\|not_null }}` | `""` quando o valor é vazio (None) |
+| `xxx` | `{{ x\|xxx }}` | `XXX` quando o valor é vazio (None) |
+| `str` | `{{ 12\|str }}` | converte para texto |
 | `file_stem` | `{{ "fotos/a.jpg"\|file_stem }}` | `a` |
 | `join_enumerate` | `{{ ["a","b","c"]\|join_enumerate }}` | `a, b e c` |
 | | `{{ ["a","b"]\|join_enumerate(true) }}` | `"a" e "b"` |
-| `br` | `{{ item\|br(loop) }}` inside a `for` | adds a line break before every item except the first |
-| `is_male` | `{{ "João Silva"\|is_male }}` | `True` when the first name ends in "o" |
+| `br` | `{{ item\|br(loop) }}` dentro de um `for` | quebra de linha antes de cada item, exceto o primeiro |
+| `is_male` | `{{ "João Silva"\|is_male }}` | `True` quando o primeiro nome termina em "o" |
 
-### Dates
+### Datas
 
-| Filter | Example | Result |
+| Filtro | Exemplo | Resultado |
 |---|---|---|
 | `data_simples` | `{{ "2026-10-15"\|data_simples }}` | `15/10/2026` |
-| `data_mes_extenso` | `{{ "15/10/2026"\|data_mes_extenso }}` | `15 de outubro de 2026` (day 1 → `1°`) |
-| `datetime` | `{{ "15/10/2026"\|datetime }}` | converts `dd/mm/yyyy` text to a date |
+| `data_mes_extenso` | `{{ "15/10/2026"\|data_mes_extenso }}` | `15 de outubro de 2026` (dia 1 → `1°`) |
+| `datetime` | `{{ "15/10/2026"\|datetime }}` | converte texto `dd/mm/aaaa` em data |
 | `data_completa` | `{{ "15/10/2026"\|datetime\|data_completa }}` | `15 (quinze) dias do mês de outubro do ano de 2026 (dois mil e vinte e seis)` |
 | `dia` | `{{ d\|dia }}` | `15` |
 | `dia_extenso` | `{{ d\|dia_extenso }}` | `15 (quinze)` |
 | `mes_extenso` | `{{ d\|mes_extenso }}` | `outubro` |
 | `hora_minuto` | `{{ d\|hora_minuto }}` | `14:05` |
-| `ornow` | `{{ data_laudo\|ornow\|data_mes_extenso }}` | the value, or **today** when it is empty |
+| `ornow` | `{{ data_laudo\|ornow\|data_mes_extenso }}` | o valor, ou **hoje** quando estiver vazio |
 
-`data_simples` and `data_mes_extenso` accept text (`15/10/2026` or `2026-10-15`). `data_completa`, `dia`, `dia_extenso`, `mes_extenso` and `hora_minuto` need a date: convert text first with `|datetime`. Otherwise they return an empty text or `XXX`.
+`data_simples` e `data_mes_extenso` aceitam texto (`15/10/2026` ou `2026-10-15`). Já `data_completa`, `dia`, `dia_extenso`, `mes_extenso` e `hora_minuto` precisam de uma data: converta o texto antes com `|datetime`. Caso contrário, devolvem um texto vazio ou `XXX`.
 
-### Numbers and money
+### Números e valores
 
-| Filter | Example | Result |
+| Filtro | Exemplo | Resultado |
 |---|---|---|
 | `numero_extenso_masc` | `{{ 1234\|numero_extenso_masc }}` | `um mil, duzentos e trinta e quatro` |
 | `numero_extenso_fem` | `{{ 2\|numero_extenso_fem }}` | `duas` |
-| `get_extenso` | `{{ 200\|get_extenso(true) }}` | `duzentas` (`true` = feminine) |
+| `get_extenso` | `{{ 200\|get_extenso(true) }}` | `duzentas` (`true` = feminino) |
 | `moeda_extenso` | `{{ 10.5\|moeda_extenso }}` | `R$ 10,50 (dez reais e cinquenta centavos)` |
 
-`moeda_extenso` needs a number: use `{{ valor|float|moeda_extenso }}` for values from `context.txt`.
+O `moeda_extenso` precisa de um número: use `{{ valor|float|moeda_extenso }}` para valores do `context.txt`.
 
-### Case numbers (`rg/ano`)
+### Números de perícia (`rg/ano`)
 
-| Filter | Example | Result |
+| Filtro | Exemplo | Resultado |
 |---|---|---|
 | `perrg` | `{{ "1234/2026"\|perrg }}` | `1234` |
 | `perano` | `{{ "1234/2026"\|perano }}` | `2026` |
 | `rgano` | `{{ "1234/2026"\|rgano }}` | `{'rg': 1234, 'ano': 2026}` |
 
-## Functions
+## Funções
 
-Call them in the template as `{{ function(arguments) }}`.
+Chame-as no modelo como `{{ funcao(argumentos) }}`.
 
-### Lists
+### Listas
 
-| Function | Example | Result |
+| Função | Exemplo | Resultado |
 |---|---|---|
-| `str_list` | `str_list(relatores, revisores)` | splits texts separated by `, ` into one list, ignoring empty values: `"a, b"`, `"c"` → `['a', 'b', 'c']` |
-| `to_table` | `to_table(pics.all(), 3)` | splits a list into rows of 3 (for grids) |
-| `len` | `len(peritos)` | number of items |
-| `join_lists` | `join_lists(a, b)` | joins lists |
-| `remove_nulls` | `remove_nulls(items, "campo")` | removes empty items and items whose `campo` is empty |
-| `filter_dashes` | `filter_dashes(pics.all(), "refname")` | removes items whose field starts with `_` |
-| `count_qtd` | `count_qtd(itens, "qtd")` | sum of the `qtd` field (or of the numbers in the list) |
-| `get_paragraphs` | `get_paragraphs(texto)` | splits a text into lines |
+| `str_list` | `str_list(relatores, revisores)` | separa textos divididos por `, ` numa única lista, ignorando valores vazios: `"a, b"`, `"c"` → `['a', 'b', 'c']` |
+| `to_table` | `to_table(pics.all(), 3)` | divide uma lista em linhas de 3 (para grades) |
+| `len` | `len(peritos)` | quantidade de itens |
+| `join_lists` | `join_lists(a, b)` | junta listas |
+| `remove_nulls` | `remove_nulls(itens, "campo")` | remove itens vazios e itens com `campo` vazio |
+| `filter_dashes` | `filter_dashes(pics.all(), "refname")` | remove itens cujo campo começa com `_` |
+| `count_qtd` | `count_qtd(itens, "qtd")` | soma do campo `qtd` (ou dos números da lista) |
+| `get_paragraphs` | `get_paragraphs(texto)` | divide um texto em linhas |
 
-### Gender and plural
+### Gênero e plural
 
-| Function | Example | Result |
+| Função | Exemplo | Resultado |
 |---|---|---|
-| `plural` | `plural("perito", 2)` | `peritos` (adds `s` when the number is > 1) |
-| `ifplural` | `ifplural(peritos, "s")` | `s` when the list has more than one item; the 3rd argument is the singular form (default empty) |
-| `gender` | `gender(pessoa, "perito")` | `perita` when `pessoa.gender` is `"F"` |
-| `male_female` | `male_female(pessoa, "o", "a")` | `"o"` or `"a"` according to `pessoa.gender` (`"M"`/`"F"`) |
+| `plural` | `plural("perito", 2)` | `peritos` (acrescenta `s` quando o número é > 1) |
+| `ifplural` | `ifplural(peritos, "s")` | `s` quando a lista tem mais de um item; o 3º argumento é a forma singular (padrão: vazio) |
+| `gender` | `gender(pessoa, "perito")` | `perita` quando `pessoa.gender` é `"F"` |
+| `male_female` | `male_female(pessoa, "o", "a")` | `"o"` ou `"a"` conforme `pessoa.gender` (`"M"`/`"F"`) |
 
-### Other
+### Outras
 
-| Function | Example | Result |
+| Função | Exemplo | Resultado |
 |---|---|---|
-| `not_null_or` | `not_null_or(x, "não informado")` | `x`, or the default when `x` is empty |
-| `case_` | `case_(tipo, {"a": "Arma", "default": "Outro"})` | value for the key, or `default` |
-| `caption` | `caption("Foto", p.refname, p.caption)` | `${Foto\|sala} - caption` (numbered later) |
-| `join_path` | `join_path("fotos", "a.jpg")` | joins path parts |
-| `subdoc`, `image` | see [Templates](#templates) | |
+| `not_null_or` | `not_null_or(x, "não informado")` | `x`, ou o valor padrão quando `x` está vazio |
+| `case_` | `case_(tipo, {"a": "Arma", "default": "Outro"})` | o valor da chave, ou o `default` |
+| `caption` | `caption("Foto", p.refname, p.caption)` | `${Foto\|sala} - legenda` (numerado depois) |
+| `join_path` | `join_path("fotos", "a.jpg")` | junta partes de um caminho |
+| `subdoc`, `image` | veja [Modelos](#modelos) | |
 
-## Command line
+## Linha de comando
 
-All commands accept `--dir <folder>` to work on another folder (default: the current one).
+Todos os comandos aceitam `--dir <pasta>` para trabalhar em outra pasta (padrão: a pasta atual).
 
-| Command | What it does |
+| Comando | O que faz |
 |---|---|
-| `laudo` / `laudo gui` | opens the main window |
-| `laudo gen` | creates `laudo.docx` |
-| `laudo gen --pdf` | creates `laudo.pdf` |
-| `laudo gen --output <file>` | chooses the output file |
-| `laudo gen --template <file>` | uses another template |
-| `laudo gen --debug [file]` | prints everything passed to the template (or saves it to a file) |
-| `laudo gen --pos-edit` | keeps the `${...}` markers without numbering them |
-| `laudo captions` | opens the caption editor |
-| `laudo vars` | prints the variables of `context.txt` |
-| `laudo context [file]` | prints (or saves) everything available to the template, as JSON |
-| `laudo init <name>` | starts a project from a shared template |
-| `laudo template <name>` | selects a shared template for the folder |
-| `laudo reduce-images <source> <dest> [--max N]` | shrinks images: folder → folder, or inside a `.docx`/`.odt`. Without `--max`, asks the size (default 450 px). If `dest` is the same as `source`, the originals are overwritten |
+| `laudo` / `laudo gui` | abre a janela principal |
+| `laudo gen` | cria o `laudo.docx` |
+| `laudo gen --pdf` | cria o `laudo.pdf` |
+| `laudo gen --output <arquivo>` | escolhe o arquivo de saída |
+| `laudo gen --template <arquivo>` | usa outro modelo |
+| `laudo gen --debug [arquivo]` | mostra tudo o que é passado ao modelo (ou salva num arquivo) |
+| `laudo gen --pos-edit` | mantém as marcações `${...}` sem numerá-las |
+| `laudo captions` | abre o editor de legendas |
+| `laudo vars` | mostra as variáveis do `context.txt` |
+| `laudo context [arquivo]` | mostra (ou salva) tudo o que está disponível para o modelo, em JSON |
+| `laudo init <nome>` | inicia um projeto a partir de um modelo compartilhado |
+| `laudo template <nome>` | seleciona um modelo compartilhado para a pasta |
+| `laudo reduce-images <origem> <destino> [--max N]` | reduz imagens: pasta → pasta, ou dentro de um `.docx`/`.odt`. Sem `--max`, pergunta o tamanho (padrão 450 px). Se o destino for igual à origem, os originais são sobrescritos |
 
-## Troubleshooting
+## Solução de problemas
 
-| Message | What to do |
+| Mensagem | O que fazer |
 |---|---|
-| `Imagem 'x' … não encontrada na pasta fotos/` | check the name in `image(x)` against the file names (the message lists the available ones) |
-| `Grupo de imagens 'x' … não encontrado` | create `fotos/x/` with photos, or fix the group name |
-| `Uso inválido de image/image_group na linha …` | put the command alone on its own line, with the number of columns for `image_group` |
-| `Referência "x" não encontrada` | `${x}` mentions a photo or item that was not inserted in the document |
-| `Referência "…" … está duplicada` | the same item (`${Label\|name}`) was inserted twice |
-| `Template 'x.docx' não encontrado` | the message lists every folder searched; add the file or fix `.laudo/.template` |
-| `No filter named '…'` | that filter does not exist, or a laudo filter was used inside a `.md` file (only allowed in the template) |
-| A variable appears empty | open **Contexto** and check the exact variable name |
+| `Imagem 'x' … não encontrada na pasta fotos/` | confira o nome em `image(x)` com os nomes dos arquivos (a mensagem lista os disponíveis) |
+| `Grupo de imagens 'x' … não encontrado` | crie `fotos/x/` com fotos, ou corrija o nome do grupo |
+| `Uso inválido de image/image_group na linha …` | deixe o comando sozinho na linha, com o número de colunas no `image_group` |
+| `Referência "x" não encontrada` | o `${x}` cita uma foto ou item que não foi inserido no documento |
+| `Referência "…" … está duplicada` | o mesmo item (`${Rótulo\|nome}`) foi inserido duas vezes |
+| `Template 'x.docx' não encontrado` | a mensagem lista todas as pastas procuradas; adicione o arquivo ou corrija o `.laudo/.template` |
+| `No filter named '…'` | esse filtro não existe, ou um filtro do laudo foi usado dentro de um `.md` (só é permitido no modelo) |
+| Uma variável aparece vazia | abra **Contexto** e confira o nome exato da variável |

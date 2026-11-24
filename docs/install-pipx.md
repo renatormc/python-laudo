@@ -1,8 +1,8 @@
-# Installing pipx
+# Instalando o pipx
 
-[pipx](https://pipx.pypa.io/) installs command-line programs such as `laudo` in their own isolated environment and puts the command on your `PATH`.
+O [pipx](https://pipx.pypa.io/) instala programas de linha de comando, como o `laudo`, cada um num ambiente isolado, e coloca o comando no seu `PATH`.
 
-You need **Python 3.13+** installed first.
+Antes, você precisa ter o **Python 3.13+** instalado.
 
 ## Windows (PowerShell)
 
@@ -33,18 +33,18 @@ brew install pipx
 pipx ensurepath
 ```
 
-## After installing
+## Depois de instalar
 
-**Close and reopen the terminal** so the `PATH` change takes effect. Then install laudo:
+**Feche e abra o terminal de novo** para a mudança no `PATH` valer. Depois, instale o laudo:
 
 ```bash
 pipx install laudo
 ```
 
-If Python 3.13+ is not your default Python, tell pipx which one to use:
+Se o Python 3.13+ não for o seu Python padrão, diga ao pipx qual usar:
 
 ```bash
 pipx install --python python3.13 laudo
 ```
 
-For other systems, see the [official pipx installation guide](https://pipx.pypa.io/stable/installation/).
+Para outros sistemas, veja o [guia oficial de instalação do pipx](https://pipx.pypa.io/stable/how-to/install-pipx.html).

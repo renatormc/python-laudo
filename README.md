@@ -1,101 +1,101 @@
 # laudo
 
-Write your report in **Markdown**, put your photos in a folder, and get a finished **Word (.docx)** or **PDF** document built from a template.
+Escreva o laudo em **Markdown**, coloque as fotos numa pasta e receba um documento **Word (.docx)** ou **PDF** pronto, montado a partir de um modelo.
 
-## Installation
+## Instalação
 
-You need **Python 3.13+** and **pipx** ([how to install pipx](https://github.com/renatormc/docmd/blob/main/docs/install-pipx.md)). Then run:
+Você precisa do **Python 3.13+** e do **pipx** ([como instalar o pipx](https://github.com/renatormc/docmd/blob/main/docs/install-pipx.md)). Depois, execute:
 
 ```bash
 pipx install laudo
 ```
 
-For PDF output, also install [LibreOffice](https://www.libreoffice.org/download/).
+Para gerar PDF, instale também o [LibreOffice](https://pt-br.libreoffice.org/baixe-ja/libreoffice-novo/).
 
-To update later: `pipx upgrade laudo`
+Para atualizar depois: `pipx upgrade laudo`
 
-## Quick start
+## Primeiros passos
 
-1. Create a folder for your report:
+1. Crie uma pasta para o laudo:
 
    ```
-   my_report/
-   ├── template.docx    # the Word template
-   ├── context.txt      # (optional) variables
-   ├── laudo.md         # your text
-   └── fotos/           # your photos
+   meu_laudo/
+   ├── template.docx    # o modelo do Word
+   ├── context.txt      # (opcional) variáveis
+   ├── laudo.md         # o seu texto
+   └── fotos/           # as suas fotos
    ```
 
-2. Open the program inside that folder:
+2. Abra o programa dentro dessa pasta:
 
    ```bash
-   cd my_report
+   cd meu_laudo
    laudo
    ```
 
-3. In the window:
-   - **Legendas** — write a caption for each photo.
-   - **Gerar laudo** — creates `laudo.docx` (tick **PDF** to get `laudo.pdf`).
+3. Na janela:
+   - **Legendas** — escreva uma legenda para cada foto.
+   - **Gerar laudo** — cria o `laudo.docx` (marque **PDF** para gerar `laudo.pdf`).
 
-Prefer the terminal? `laudo gen` creates `laudo.docx`, and `laudo gen --pdf` creates `laudo.pdf`.
+Prefere o terminal? `laudo gen` cria o `laudo.docx`, e `laudo gen --pdf` cria o `laudo.pdf`.
 
-## Writing the report
+## Escrevendo o laudo
 
-### Text (`.md` files)
+### Texto (arquivos `.md`)
 
-Write normally in Markdown: `# Title`, `## Subtitle`, `**bold**`, `*italic*` and `- lists`.
+Escreva normalmente em Markdown: `# Título`, `## Subtítulo`, `**negrito**`, `*itálico*` e `- listas`.
 
-Each `.md` file becomes a variable in the template with the file's name. For example, `laudo.md` is inserted where the template has `{{p laudo|markdown }}`.
+Cada arquivo `.md` vira uma variável no modelo, com o nome do arquivo. Por exemplo, o `laudo.md` é inserido onde o modelo tiver `{{p laudo|markdown }}`.
 
-### Variables (`context.txt`)
+### Variáveis (`context.txt`)
 
-One variable per line:
+Uma variável por linha:
 
 ```
 requisitante = Delegacia de Anápolis
 data_pericia = 15/10/2026
 ```
 
-Use them in the template or in the text as `{{ requisitante }}`.
+Use-as no modelo ou no texto como `{{ requisitante }}`.
 
-### Photos
+### Fotos
 
-Put the photos in `fotos/`. Subfolders become groups (e.g. `fotos/local/`).
+Coloque as fotos em `fotos/`. Subpastas viram grupos (por exemplo, `fotos/local/`).
 
-Inside the text:
+Dentro do texto:
 
-| You write | Result |
+| Você escreve | Resultado |
 |---|---|
-| `image(foto1)` | inserts the photo `foto1.jpg` with its caption |
-| `image_group(local, 3)` | inserts every photo in `fotos/local/`, 3 per row (any number works) |
-| `${foto1}` | the number of that photo, e.g. "Conforme Foto ${foto1}" → "Conforme Foto 3" |
+| `image(foto1)` | insere a foto `foto1.jpg` com a legenda |
+| `image_group(local, 3)` | insere todas as fotos de `fotos/local/`, 3 por linha (qualquer número de colunas funciona) |
+| `${foto1}` | o número dessa foto, ex.: "Conforme Foto ${foto1}" → "Conforme Foto 3" |
 
-- Write `image(...)` and `image_group(...)` **alone on their own line** (otherwise generation stops and shows the line to fix).
-- Photos are numbered automatically in the order they appear in the document.
-- `${foto1}` only works if that photo was inserted with `image` or `image_group`; otherwise generation stops with an error.
+- Escreva `image(...)` e `image_group(...)` **sozinhos na linha** (caso contrário, a geração para e mostra a linha a corrigir).
+- As fotos são numeradas automaticamente na ordem em que aparecem no documento.
+- `${foto1}` só funciona se a foto tiver sido inserida com `image` ou `image_group`; caso contrário, a geração para com um erro.
 
-### Shared templates (optional)
+### Modelos compartilhados (opcional)
 
-If you keep your templates in one folder (one subfolder per template, each with its own `template.docx`), set the `LAUDOS_TEMPLATES_FOLDER` environment variable to that folder. Then, inside a report folder, run:
+Se você guarda os modelos numa pasta (uma subpasta por modelo, cada uma com seu `template.docx`), aponte a variável de ambiente `LAUDOS_TEMPLATES_FOLDER` para essa pasta. Depois, dentro da pasta do laudo, execute:
 
 ```bash
-laudo init <template-name>
+laudo init <nome-do-modelo>
 ```
 
-## Other commands
+## Outros comandos
 
-| Command | What it does |
+| Comando | O que faz |
 |---|---|
-| `laudo` | opens the main window |
-| `laudo gen [--pdf]` | generates the report |
-| `laudo captions` | opens only the caption editor |
-| `laudo reduce-images fotos fotos` | shrinks large photos (you pick the maximum size). **Overwrites the originals**: use another destination folder to keep them |
-| `laudo --help` | lists every command and option |
+| `laudo` | abre a janela principal |
+| `laudo gen [--pdf]` | gera o laudo |
+| `laudo captions` | abre só o editor de legendas |
+| `laudo reduce-images fotos fotos` | reduz fotos grandes (você escolhe o tamanho máximo). **Sobrescreve os originais**: use outra pasta de destino para preservá-los |
+| `laudo --help` | lista todos os comandos e opções |
 
-## Full documentation
+## Documentação completa
 
-The [user guide](https://github.com/renatormc/docmd/blob/main/docs/user-guide.md) covers everything else: sections inside `.md` files, `.json` data, photo groups in the template, numbering tables and figures, shared templates, and the full list of filters and functions.
+O [guia do usuário](https://github.com/renatormc/docmd/blob/main/docs/user-guide.md) cobre todo o resto: seções dentro dos arquivos `.md`, dados em `.json`, grupos de fotos no modelo, numeração de tabelas e figuras, modelos compartilhados e a lista completa de filtros e funções.
 
-## License
+## Licença
 
 MIT
