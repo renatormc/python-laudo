@@ -4,7 +4,7 @@ Write your report in **Markdown**, put your photos in a folder, and get a finish
 
 ## Installation
 
-You need **Python 3.13+** and **pipx** ([how to install pipx](https://github.com/renatormc/laudo/blob/main/docs/install-pipx.md)). Then run:
+You need **Python 3.13+** and **pipx** ([how to install pipx](https://github.com/renatormc/docmd/blob/main/docs/install-pipx.md)). Then run:
 
 ```bash
 pipx install laudo
@@ -94,7 +94,7 @@ laudo init <template-name>
 
 ## Full documentation
 
-The [user guide](https://github.com/renatormc/laudo/blob/main/docs/user-guide.md) covers everything else: sections inside `.md` files, `.json` data, photo groups in the template, numbering tables and figures, shared templates, and the full list of filters and functions.
+The [user guide](https://github.com/renatormc/docmd/blob/main/docs/user-guide.md) covers everything else: sections inside `.md` files, `.json` data, photo groups in the template, numbering tables and figures, shared templates, and the full list of filters and functions.
 
 ## License
 
