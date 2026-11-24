@@ -1,10 +1,9 @@
-import os
 import sys
 from pathlib import Path
 from typing import cast
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QIcon, QPixmap
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QDialog,
     QApplication,
@@ -20,15 +19,17 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from .. import images
+from .. import db, images
 
 
 class _ImageCard(QWidget):
     clicked = Signal()
 
-    def __init__(self, name: str, thumb_path: Path, caption: str):
+    def __init__(self, path: Path, thumb_path: Path, caption: str):
         super().__init__()
-        self.name = name
+        self.path = path
+        self.name = path.stem
+        name = self.name
         self._original = caption
         layout = QVBoxLayout()
         layout.setContentsMargins(4, 4, 4, 4)
@@ -58,6 +59,9 @@ class _ImageCard(QWidget):
 
     def is_changed(self) -> bool:
         return self.caption_edit.text() != self._original
+
+    def mark_saved(self) -> None:
+        self._original = self.caption_edit.text()
 
 
 class _ImageDialog(QDialog):
@@ -122,9 +126,8 @@ class _ImageDialog(QDialog):
 
     def _load_image(self) -> None:
         card = self.cards[self.index]
-        img_path = images.get_image_path(card.name)
-        if img_path is not None:
-            pixmap = QPixmap(str(img_path))
+        if card.path.is_file():
+            pixmap = QPixmap(str(card.path))
             screen = self.screen().availableGeometry()
             max_w = min(screen.width() - 40, 1200)
             max_h = min(screen.height() - 200, 800)
@@ -171,7 +174,7 @@ class _ImageDialog(QDialog):
 class CaptionEditor(QWidget):
     def __init__(self, dir_path: Path | None = None):
         super().__init__()
-        self.dir_path = dir_path
+        self.dir_path = dir_path or Path.cwd()
         self.cards: list[_ImageCard] = []
         self._init_ui()
         self._load_images()
@@ -216,10 +219,7 @@ class CaptionEditor(QWidget):
         self.setLayout(layout)
 
     def _load_images(self) -> None:
-        if self.dir_path is not None:
-            os.chdir(str(self.dir_path))
-
-        image_list = images.list_images()
+        image_list = images.list_images(self.dir_path)
         if not image_list:
             msg = QLabel("No images found in fotos/")
             msg.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -227,14 +227,11 @@ class CaptionEditor(QWidget):
             self.grid_layout.addWidget(msg, 0, 0)
             return
 
+        captions = db.get_captions(self.dir_path)  # one query for all images
         cols = 4
         for i, img_path in enumerate(image_list):
-            name = img_path.stem
-            thumb = images.get_thumbnail(name)
-            if thumb is None:
-                continue
-            caption = images.get_caption(name)
-            card = _ImageCard(name, thumb, caption)
+            thumb = images.thumbnail_for(img_path, self.dir_path)
+            card = _ImageCard(img_path, thumb, captions.get(img_path.stem, ""))
             card.clicked.connect(lambda idx=len(self.cards): self._open_card(idx))
             self.cards.append(card)
             self.grid_layout.addWidget(card, i // cols, i % cols)
@@ -272,17 +269,17 @@ class CaptionEditor(QWidget):
             card.setVisible(True)
             self.grid_layout.addWidget(card, i // cols, i % cols)
 
+        visible = set(map(id, matching))
         for card in self.cards:
-            if card not in matching:
+            if id(card) not in visible:
                 card.setVisible(False)
 
     def _save(self) -> None:
-        saved = 0
-        for card in self.cards:
-            if card.is_changed():
-                images.set_caption(card.name, card.caption_edit.text())
-                saved += 1
-        self.statusBar().showMessage(f"Saved {saved} caption(s).", 3000)
+        changed = [card for card in self.cards if card.is_changed()]
+        db.set_captions(((card.name, card.caption_edit.text()) for card in changed), self.dir_path)
+        for card in changed:
+            card.mark_saved()
+        self.statusBar().showMessage(f"Saved {len(changed)} caption(s).", 3000)
 
     def statusBar(self) -> QStatusBar:
         parent = self.window()
@@ -296,10 +293,10 @@ class CaptionEditor(QWidget):
 
 
 def run(dir_path: Path | None = None) -> None:
+    from .main_window import set_app_icon
+
     app = QApplication(sys.argv)
-    icon_path = Path(__file__).parent / "assets" / "icon.png"
-    if icon_path.is_file():
-        app.setWindowIcon(QIcon(str(icon_path)))
+    set_app_icon(app)
     window = CaptionEditor(dir_path)
     window.show()
     sys.exit(app.exec())

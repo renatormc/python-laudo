@@ -7,7 +7,8 @@ import sys
 from pathlib import Path
 
 from . import convert
-from .core import PicsContext, _build_context, _parse_context_txt
+from .core import _build_context, _parse_context_txt, context_to_json
+from .errors import LaudoError
 
 
 def _find_project_root() -> Path:
@@ -58,10 +59,22 @@ def _cmd_install() -> None:
                 print(f"  {path_hint}")
 
 
-def _cmd_gen(dir_: Path | None, debug: Path | bool, pdf: bool, output: Path | None, template: Path | None, pos_edit: bool) -> None:
+def _enter_dir(dir_: Path | None) -> Path:
+    """chdir into ``dir_`` (when given) and return the project folder."""
     if dir_ is not None:
         os.chdir(str(dir_))
-    folder = Path.cwd()
+    return Path.cwd()
+
+
+def _write_template_name(folder: Path, name: str) -> None:
+    laudo_dir = folder / ".laudo"
+    laudo_dir.mkdir(parents=True, exist_ok=True)
+    (laudo_dir / ".template").write_text(f"{name}\n", encoding="utf-8")
+    print(f"Template '{name}' set for {folder}")
+
+
+def _cmd_gen(dir_: Path | None, debug: Path | bool, pdf: bool, output: Path | None, template: Path | None, pos_edit: bool) -> None:
+    folder = _enter_dir(dir_)
     if output is None:
         output = folder / ("laudo.pdf" if pdf else "laudo.docx")
     result = convert(folder, output, debug=debug, template=template, pos_edit=pos_edit)
@@ -69,11 +82,9 @@ def _cmd_gen(dir_: Path | None, debug: Path | bool, pdf: bool, output: Path | No
 
 
 def _cmd_captions(dir_: Path | None) -> None:
-    if dir_ is not None:
-        os.chdir(str(dir_))
     from .gui import run as run_gui
 
-    run_gui(Path.cwd())
+    run_gui(_enter_dir(dir_))
 
 
 def _cmd_gui(dir_: Path | None) -> None:
@@ -83,40 +94,17 @@ def _cmd_gui(dir_: Path | None) -> None:
 
 
 def _cmd_template(dir_: Path | None, name: str) -> None:
-    if dir_ is not None:
-        os.chdir(str(dir_))
-    folder = Path.cwd()
-    laudo_dir = folder / ".laudo"
-    laudo_dir.mkdir(parents=True, exist_ok=True)
-    template_file = laudo_dir / ".template"
-    template_file.write_text(f"{name}\n", encoding="utf-8")
-    print(f"Template '{name}' set for {folder}")
+    _write_template_name(_enter_dir(dir_), name)
 
 
 def _cmd_vars(dir_: Path | None) -> None:
-    if dir_ is not None:
-        os.chdir(str(dir_))
-    folder = Path.cwd()
-    ctx = _parse_context_txt(folder)
-    print(json.dumps(ctx, indent=2, ensure_ascii=False))
-
-
-def _json_default(obj: object) -> object:
-    if isinstance(obj, PicsContext):
-        return obj.all()
-    if isinstance(obj, Path):
-        return str(obj)
-    return repr(obj)
+    print(json.dumps(_parse_context_txt(_enter_dir(dir_)), indent=2, ensure_ascii=False))
 
 
 def _cmd_context(dir_: Path | None, output: Path | None) -> None:
     if output is not None:
         output = output.resolve()
-    if dir_ is not None:
-        os.chdir(str(dir_))
-    folder = Path.cwd()
-    context = _build_context(folder)
-    formatted = json.dumps(context.ctx, indent=2, ensure_ascii=False, default=_json_default)
+    formatted = context_to_json(_build_context(_enter_dir(dir_)).ctx)
     if output is not None:
         output.write_text(formatted, encoding="utf-8")
         print(f"Context written to {output}")
@@ -125,15 +113,8 @@ def _cmd_context(dir_: Path | None, output: Path | None) -> None:
 
 
 def _cmd_init(dir_: Path | None, name: str) -> None:
-    if dir_ is not None:
-        os.chdir(str(dir_))
-    folder = Path.cwd()
-
-    laudo_dir = folder / ".laudo"
-    laudo_dir.mkdir(parents=True, exist_ok=True)
-    template_file = laudo_dir / ".template"
-    template_file.write_text(f"{name}\n", encoding="utf-8")
-    print(f"Template '{name}' set for {folder}")
+    folder = _enter_dir(dir_)
+    _write_template_name(folder, name)
 
     templates_dir = os.environ.get("LAUDOS_TEMPLATES_FOLDER")
     if not templates_dir:
@@ -145,31 +126,27 @@ def _cmd_init(dir_: Path | None, name: str) -> None:
         print(f"Template folder not found: {src}, skipping file copy")
         return
 
-    skip_exts = {".docx"}
     copied = 0
     for item in src.iterdir():
-        if item.is_file() and item.suffix not in skip_exts:
-            dest = folder / item.name
-            shutil.copy2(str(item), str(dest))
+        if item.is_file() and item.suffix != ".docx":
+            shutil.copy2(item, folder / item.name)
             copied += 1
 
     print(f"Copied {copied} file(s) from {src} to {folder}")
 
 
-_RESOLUTION_CHOICES: tuple[int, ...] = (300, 450, 600, 800, 1024, 1280, 1600, 1920)
-_DEFAULT_RESOLUTION = 450
-
-
 def _ask_max_resolution() -> int:
+    from .reduce import DEFAULT_RESOLUTION, RESOLUTION_CHOICES
+
     if not sys.stdin.isatty():
-        return _DEFAULT_RESOLUTION
+        return DEFAULT_RESOLUTION
     import inquirer  # type: ignore[import-untyped]
 
     question = inquirer.List(
         "max_resolution",
         message="Maximum width/height in pixels",
-        choices=[(f"{r}px", r) for r in _RESOLUTION_CHOICES],
-        default=_DEFAULT_RESOLUTION,
+        choices=[(f"{r}px", r) for r in RESOLUTION_CHOICES],
+        default=DEFAULT_RESOLUTION,
     )
     answers = inquirer.prompt([question])
     if answers is None:
@@ -244,6 +221,14 @@ def main() -> None:
         _cmd_gui(None)
         return
 
+    try:
+        _dispatch(args)
+    except LaudoError as e:
+        print(f"Erro: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def _dispatch(args: argparse.Namespace) -> None:
     match args.command:
         case "install":
             _cmd_install()

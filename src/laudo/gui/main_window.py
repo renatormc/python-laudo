@@ -5,8 +5,9 @@ import traceback
 from collections.abc import Callable
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QRectF, QRunnable, Qt, QThreadPool, QTimer, Signal
-from PySide6.QtGui import QCloseEvent, QColor, QFont, QIcon, QPainter, QPaintEvent, QPen
+from PySide6.QtCore import QByteArray, QObject, QRectF, QRunnable, QSize, Qt, QThreadPool, QTimer, Signal
+from PySide6.QtGui import QCloseEvent, QColor, QFont, QIcon, QPainter, QPaintEvent, QPalette, QPen, QPixmap
+from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -26,18 +27,16 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-_RESOLUTION_CHOICES: tuple[int, ...] = (300, 450, 600, 800, 1024, 1280, 1600, 1920)
-_DEFAULT_RESOLUTION = 450
+from ..reduce import DEFAULT_RESOLUTION, RESOLUTION_CHOICES
+
+ASSETS_DIR = Path(__file__).parent / "assets"
+ICONS_DIR = ASSETS_DIR / "icons"
+APP_ICON = ASSETS_DIR / "icon.png"
 
 
-def _json_default(obj: object) -> object:
-    from ..core import PicsContext
-
-    if isinstance(obj, PicsContext):
-        return obj.all()
-    if isinstance(obj, Path):
-        return str(obj)
-    return repr(obj)
+def set_app_icon(app: QApplication) -> None:
+    if APP_ICON.is_file():
+        app.setWindowIcon(QIcon(str(APP_ICON)))
 
 
 class Spinner(QWidget):
@@ -113,9 +112,9 @@ class ReduceImagesDialog(QDialog):
         self.dest_edit = QLineEdit(str(folder / "fotos"))
         form.addRow("Destino:", self._path_row(self.dest_edit, self._pick_dest))
         self.max_combo = QComboBox()
-        for r in _RESOLUTION_CHOICES:
+        for r in RESOLUTION_CHOICES:
             self.max_combo.addItem(f"{r}px", r)
-        self.max_combo.setCurrentIndex(_RESOLUTION_CHOICES.index(_DEFAULT_RESOLUTION))
+        self.max_combo.setCurrentIndex(RESOLUTION_CHOICES.index(DEFAULT_RESOLUTION))
         form.addRow("Tamanho máximo:", self.max_combo)
 
         buttons = QDialogButtonBox(
@@ -207,23 +206,24 @@ class MainWindow(QWidget):
         self.folder_edit = QLineEdit(str(folder.resolve()))
         folder_row.addWidget(self.folder_edit, 1)
         browse_btn = QPushButton("Selecionar…")
+        browse_btn.setIcon(self._icon("folder"))
         browse_btn.clicked.connect(self._browse_folder)
         folder_row.addWidget(browse_btn)
         layout.addLayout(folder_row)
 
         grid = QGridLayout()
         grid.setSpacing(8)
-        self.gen_btn = self._make_button("Gerar laudo", "gen — gera o docx/pdf", self._on_gen)
+        self.gen_btn = self._make_button("Gerar laudo", "gen — gera o docx/pdf", self._on_gen, "gen")
         self.pdf_check = QCheckBox("PDF")
         self.pdf_check.setToolTip("Gerar PDF em vez de DOCX")
         gen_box = QHBoxLayout()
         gen_box.addWidget(self.gen_btn, 1)
         gen_box.addWidget(self.pdf_check)
         grid.addLayout(gen_box, 0, 0)
-        grid.addWidget(self._make_button("Legendas", "captions — editor de legendas", self._on_captions), 0, 1)
-        grid.addWidget(self._make_button("Variáveis", "vars — variáveis do context.txt", self._on_vars), 0, 2)
-        grid.addWidget(self._make_button("Contexto", "context — contexto completo do template", self._on_context), 1, 0)
-        grid.addWidget(self._make_button("Reduzir imagens", "reduce-images", self._on_reduce), 1, 1)
+        grid.addWidget(self._make_button("Legendas", "captions — editor de legendas", self._on_captions, "captions"), 0, 1)
+        grid.addWidget(self._make_button("Variáveis", "vars — variáveis do context.txt", self._on_vars, "vars"), 0, 2)
+        grid.addWidget(self._make_button("Contexto", "context — contexto completo do template", self._on_context, "context"), 1, 0)
+        grid.addWidget(self._make_button("Reduzir imagens", "reduce-images", self._on_reduce, "reduce"), 1, 1)
         layout.addLayout(grid)
 
         self.output = QPlainTextEdit()
@@ -240,13 +240,35 @@ class MainWindow(QWidget):
         status_row.addWidget(self.status_label, 1)
         layout.addLayout(status_row)
 
-    def _make_button(self, text: str, tooltip: str, slot: Callable[[], None]) -> QPushButton:
+    def _make_button(self, text: str, tooltip: str, slot: Callable[[], None], icon: str | None = None) -> QPushButton:
         btn = QPushButton(text)
+        if icon:
+            btn.setIcon(self._icon(icon))
+            btn.setIconSize(QSize(18, 18))
         btn.setToolTip(tooltip)
         btn.setMinimumHeight(36)
         btn.clicked.connect(slot)
         self._action_buttons.append(btn)
         return btn
+
+    def _icon(self, name: str) -> QIcon:
+        """Load a stroke SVG from assets/icons, tinted with the palette's text color."""
+        path = ICONS_DIR / f"{name}.svg"
+        if not path.is_file():
+            return QIcon()
+        color = self.palette().color(QPalette.ColorRole.ButtonText).name()
+        data = path.read_text(encoding="utf-8").replace("currentColor", color).encode("utf-8")
+        renderer = QSvgRenderer(QByteArray(data))
+        icon = QIcon()
+        for size in (16, 18, 24, 32, 48):
+            pixmap = QPixmap(QSize(size, size) * self.devicePixelRatioF())
+            pixmap.setDevicePixelRatio(self.devicePixelRatioF())
+            pixmap.fill(Qt.GlobalColor.transparent)
+            painter = QPainter(pixmap)
+            renderer.render(painter, QRectF(0, 0, size, size))
+            painter.end()
+            icon.addPixmap(pixmap)
+        return icon
 
     def _browse_folder(self) -> None:
         path = QFileDialog.getExistingDirectory(self, "Selecionar pasta", self.folder_edit.text())
@@ -356,10 +378,9 @@ class MainWindow(QWidget):
             return
 
         def task() -> str:
-            from ..core import _build_context
+            from ..core import _build_context, context_to_json
 
-            context = _build_context(folder)
-            return json.dumps(context.ctx, indent=2, ensure_ascii=False, default=_json_default)
+            return context_to_json(_build_context(folder).ctx)
 
         self._run_task("Contexto", task)
 
@@ -391,9 +412,7 @@ class MainWindow(QWidget):
 def run_main(dir_path: Path | None = None) -> None:
     existing = QApplication.instance()
     app = existing if isinstance(existing, QApplication) else QApplication(sys.argv)
-    icon_path = Path(__file__).parent / "assets" / "icon.png"
-    if icon_path.is_file():
-        app.setWindowIcon(QIcon(str(icon_path)))
+    set_app_icon(app)
     window = MainWindow(dir_path)
     window.show()
     sys.exit(app.exec())

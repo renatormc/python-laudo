@@ -1,12 +1,8 @@
-from .global_functions import GlobalFunctions
 from jinja2 import Environment
 
+from .._registry import public_methods
+from .global_functions import GlobalFunctions
 
-def register(jinja_env: 'Environment') -> None:
-    gf = GlobalFunctions()
-    for name in dir(gf):
-        if not name.startswith("_"):
-            method = getattr(gf, name)
-            if callable(method):
-                jinja_env.globals[name] = method   
 
+def register(jinja_env: Environment) -> None:
+    jinja_env.globals.update(public_methods(GlobalFunctions()))

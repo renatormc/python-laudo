@@ -1,177 +1,100 @@
 # laudo
 
-Convert markdown files to **docx** or **pdf** using `docxtpl` templates.
+Write your report in **Markdown**, put your photos in a folder, and get a finished **Word (.docx)** or **PDF** document built from a template.
 
 ## Installation
 
-The recommended way to install the `laudo` CLI is with [pipx](https://pipx.pypa.io/), which installs it in an isolated environment and puts the command on your `PATH`.
-
-Requires **Python 3.13+** and **LibreOffice** (only for PDF output).
-
-### 1. Install pipx
-
-Ubuntu/Debian:
-
-```bash
-sudo apt update
-sudo apt install pipx
-pipx ensurepath
-```
-
-Arch Linux:
-
-```bash
-sudo pacman -S python-pipx
-pipx ensurepath
-```
-
-macOS (Homebrew):
-
-```bash
-brew install pipx
-pipx ensurepath
-```
-
-Windows (PowerShell):
-
-```powershell
-py -m pip install --user pipx
-py -m pipx ensurepath
-```
-
-Restart your terminal afterwards so the `PATH` change takes effect. For other systems, see the [pipx installation guide](https://pipx.pypa.io/stable/installation/).
-
-### 2. Install laudo
-
-From PyPI:
+You need **Python 3.13+** and **pipx** ([how to install pipx](https://github.com/renatormc/laudo/blob/main/docs/install-pipx.md)). Then run:
 
 ```bash
 pipx install laudo
 ```
 
-A specific version:
+For PDF output, also install [LibreOffice](https://www.libreoffice.org/download/).
 
-```bash
-pipx install laudo==0.2.3
-```
+To update later: `pipx upgrade laudo`
 
-The latest code from GitHub:
+## Quick start
 
-```bash
-pipx install git+https://github.com/renatormc/laudo.git
-```
+1. Create a folder for your report:
 
-From a local clone, in editable mode (code changes take effect without reinstalling):
+   ```
+   my_report/
+   ├── template.docx    # the Word template
+   ├── context.txt      # (optional) variables
+   ├── laudo.md         # your text
+   └── fotos/           # your photos
+   ```
 
-```bash
-git clone https://github.com/renatormc/laudo.git
-pipx install --editable ./laudo
-```
+2. Open the program inside that folder:
 
-If Python 3.13+ is not your default interpreter, point pipx at it:
+   ```bash
+   cd my_report
+   laudo
+   ```
 
-```bash
-pipx install --python python3.13 laudo
-```
+3. In the window:
+   - **Legendas** — write a caption for each photo.
+   - **Gerar laudo** — creates `laudo.docx` (tick **PDF** to get `laudo.pdf`).
 
-Check the installation:
+Prefer the terminal? `laudo gen` creates `laudo.docx`, and `laudo gen --pdf` creates `laudo.pdf`.
 
-```bash
-laudo --help
-```
+## Writing the report
 
-### 3. Upgrade or uninstall
+### Text (`.md` files)
 
-```bash
-pipx upgrade laudo                # upgrade to the latest release
-pipx install --force laudo        # reinstall (e.g. after switching source)
-pipx uninstall laudo
-```
+Write normally in Markdown: `# Title`, `## Subtitle`, `**bold**`, `*italic*` and `- lists`.
 
-`pipx list` shows the installed version and the Python interpreter in use.
+Each `.md` file becomes a variable in the template with the file's name. For example, `laudo.md` is inserted where the template has `{{p laudo|markdown }}`.
 
-> To use the [Python API](#python-api) from your own code, install `laudo` into that project's virtual environment instead (e.g. `uv add laudo` or `pip install laudo`).
+### Variables (`context.txt`)
 
-## Usage
-
-### CLI
-
-```bash
-laudo [gui] [--dir <folder>]               # main GUI (default with no command)
-laudo gen [--dir <folder>] [--debug] [--pdf] [--output <path>] [--template <path>]
-laudo captions [--dir <folder>]
-laudo template <name> [--dir <folder>]
-laudo vars [--dir <folder>]
-laudo init <name> [--dir <folder>]
-laudo reduce-images <source> <dest> [--max <pixels>]
-laudo install
-```
-
-### Python API
-
-```python
-from laudo import convert
-
-convert("my_project/", "output.docx")
-convert("my_project/", "output.pdf")
-```
-
-### Reducing images
-
-`laudo reduce-images` shrinks images so that neither side exceeds the chosen size (aspect ratio is kept):
-
-```bash
-laudo reduce-images fotos/ fotos_small/          # folder -> folder (recursive)
-laudo reduce-images report.docx report.docx      # images embedded in a .docx/.odt
-laudo reduce-images report.docx small.docx --max 600
-```
-
-Without `--max`, an interactive list lets you pick the size (default 450px).
-
-## Input Folder Structure
+One variable per line:
 
 ```
-my_project/
-├── template.docx          # docxtpl template with Jinja2 placeholders
-├── fotos/                 # Images (captions edited via GUI)
-│   ├── image1.png
-│   └── events/
-│       └── party.jpg
-├── context.txt            # (optional) Variables one per line: key = value
-├── intro.md               # One or more .md files
-└── chapter-1.md
+requisitante = Delegacia de Anápolis
+data_pericia = 15/10/2026
 ```
 
-### Template
+Use them in the template or in the text as `{{ requisitante }}`.
 
-A standard Word document using [docxtpl](https://github.com/elapouya/python-docxtpl) syntax with Jinja2 placeholders like `{{ variable }}` or `{{p intro|markdown }}`.
+### Photos
 
-To use a template from a shared folder, create `.laudo/.template` with the template name and set the `LAUDOS_TEMPLATES_FOLDER` environment variable.
+Put the photos in `fotos/`. Subfolders become groups (e.g. `fotos/local/`).
 
-### context.txt
+Inside the text:
 
-Optional file with variables in `key = value` format, one per line. Lines starting with `#` and empty lines are ignored. These variables are available for substitution inside `.md` files via `{{ varname }}`.
-
-### Markdown files
-
-Every `.md` file is read and its content is injected as a template variable named after the filename (without extension, spaces → underscores):
-
-| File | Template variable |
+| You write | Result |
 |---|---|
-| `intro.md` | `intro` |
-| `chapter 1.md` | `chapter_1` |
+| `image(foto1)` | inserts the photo `foto1.jpg` with its caption |
+| `image_group(local, 3)` | inserts every photo in `fotos/local/`, 3 per row (any number works) |
+| `${foto1}` | the number of that photo, e.g. "Conforme Foto ${foto1}" → "Conforme Foto 3" |
 
-Inside markdown files you can reference context variables with `{{ varname }}` and embed image groups with `image_group(name, cols)`.
+- Write `image(...)` and `image_group(...)` **alone on their own line** (otherwise generation stops and shows the line to fix).
+- Photos are numbered automatically in the order they appear in the document.
+- `${foto1}` only works if that photo was inserted with `image` or `image_group`; otherwise generation stops with an error.
 
-### Images
+### Shared templates (optional)
 
-All images in `fotos/` (including subdirectories) are available as the `pics` variable in templates. Use `pics.group("events")` to get images from a subfolder, or `pics.all` for all images. Captions are edited via the `laudo captions` GUI.
+If you keep your templates in one folder (one subfolder per template, each with its own `template.docx`), set the `LAUDOS_TEMPLATES_FOLDER` environment variable to that folder. Then, inside a report folder, run:
 
-### Template helpers
+```bash
+laudo init <template-name>
+```
 
-- `{{p variable\|markdown }}` — render markdown as formatted docx content
-- `{{p subdoc("file.docx", key=val) }}` — embed a sub-template
-- `{{p image("fotos/logo.png", width=50) }}` — inline image with size control
+## Other commands
+
+| Command | What it does |
+|---|---|
+| `laudo` | opens the main window |
+| `laudo gen [--pdf]` | generates the report |
+| `laudo captions` | opens only the caption editor |
+| `laudo reduce-images fotos fotos` | shrinks large photos (you pick the maximum size). **Overwrites the originals**: use another destination folder to keep them |
+| `laudo --help` | lists every command and option |
+
+## Full documentation
+
+The [user guide](https://github.com/renatormc/laudo/blob/main/docs/user-guide.md) covers everything else: sections inside `.md` files, `.json` data, photo groups in the template, numbering tables and figures, shared templates, and the full list of filters and functions.
 
 ## License
 

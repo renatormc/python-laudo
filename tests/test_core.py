@@ -64,13 +64,66 @@ def test_read_context_json(tmp_path: Path):
 
 def test_replace_pos_vars():
     result = _replace_pos_vars("image_group(name, 3)")
-    expected = "{{p subdoc('image_group', pics=pics.group('name'),  cols=3) }}"
+    expected = ("{{p subdoc('image_group', pics=pics.require_group('name'), cols=3|int) }}", 1)
     assert result == expected, f"Expected {expected!r}, got {result!r}"
-    result = _replace_pos_vars("xx image_group(a, b) yy")
-    expected = "xx {{p subdoc('image_group', pics=pics.group('a'),  cols=b) }} yy"
+    # cols may be a context variable (context.txt values are strings, hence |int)
+    result = _replace_pos_vars("xx\n  image_group( a , cols )  \nyy")
+    expected = ("xx\n{{p subdoc('image_group', pics=pics.require_group('a'), cols=cols|int) }}\nyy", 1)
     assert result == expected, f"Expected {expected!r}, got {result!r}"
-    assert _replace_pos_vars("no match here") == "no match here"
-    assert _replace_pos_vars("") == ""
+    result = _replace_pos_vars("image(foto 1)")
+    expected = ("{{p subdoc('image_group', pics=[pics.require('foto 1')], cols=1) }}", 1)
+    assert result == expected, f"Expected {expected!r}, got {result!r}"
+    assert _replace_pos_vars("no match here") == ("no match here", 0)
+    assert _replace_pos_vars("") == ("", 0)
+
+
+def test_replace_pos_vars_rejects_macro_inside_text():
+    import pytest
+    from laudo.errors import LaudoError
+
+    for line in ("Veja image(foto1) abaixo", "image(a) e image(b)", "image_group(local)", "image_group(a, 2) fim"):
+        with pytest.raises(LaudoError, match="sozinho na linha"):
+            _replace_pos_vars(f"texto\n{line}\n")
+
+
+def test_image_group_supports_any_number_of_columns(tmp_path: Path):
+    import zipfile
+
+    from docx import Document
+    from lxml import etree
+
+    from laudo import convert
+
+    project = tmp_path / "proj"
+    grupo = project / "fotos" / "grupo"
+    grupo.mkdir(parents=True)
+    for i in range(5):
+        Image.new("RGB", (40, 30)).save(str(grupo / f"x{i}.jpg"))
+    doc = Document()
+    doc.add_paragraph("{{p laudo|markdown }}")
+    doc.save(str(project / "template.docx"))
+
+    for cols in (1, 2, 3, 4):
+        (project / "laudo.md").write_text(f"image_group(grupo, {cols})\n", encoding="utf-8")
+        out = convert(project, project / f"out{cols}.docx")
+        xml = zipfile.ZipFile(out).read("word/document.xml")
+        etree.fromstring(xml)
+        assert xml.count(b"<pic:pic") == 5, f"cols={cols}"
+        assert b"Foto 5" in xml
+
+
+def test_pics_require_missing_gives_clear_error():
+    import pytest
+    from laudo.errors import ImageNotFoundError
+
+    pics = PicsContext([{"refname": "a", "group": "g"}])
+    assert pics.require(" a ")["refname"] == "a"
+    with pytest.raises(ImageNotFoundError, match="Imagem 'loc'.*Imagens disponíveis: a"):
+        pics.require("loc")
+    with pytest.raises(ImageNotFoundError, match="Grupo de imagens 'x'.*Grupos disponíveis: g"):
+        pics.require_group("x")
+    with pytest.raises(ImageNotFoundError, match="fotos/ não existe"):
+        PicsContext([]).require("loc")
 
 
 def test_read_markdown_no_sections():
@@ -194,3 +247,24 @@ def test_render_docx_with_markdown_filter(template_path: Path, tmp_path: Path):
     context = {"intro": "# Hello"}
     result = render_docx(template_path, context, output)
     assert result.is_file()
+
+
+def test_subdoc_with_images_produces_valid_xml(sample_project: Path, tmp_path: Path):
+    """Images inserted via subdoc must keep their namespace declarations (xmlns:a)."""
+    import zipfile
+
+    from docx import Document
+    from lxml import etree
+
+    template = tmp_path / "tpl.docx"
+    doc = Document()
+    doc.add_paragraph("{{p subdoc('image_group', pics=pics.all(), cols=2) }}")
+    doc.save(str(template))
+
+    ctx = _build_context(sample_project).ctx
+    output = render_docx(template, ctx, tmp_path / "out.docx", replace_references=False, workdir=sample_project)
+
+    xml = zipfile.ZipFile(output).read("word/document.xml")
+    etree.fromstring(xml)  # raises XMLSyntaxError on undeclared prefixes
+    assert xml.count(b"<pic:pic") == 2
+    Document(str(output))  # python-docx can reopen it

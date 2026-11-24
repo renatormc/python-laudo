@@ -9,7 +9,10 @@ src/laudo/
 ├── __init__.py          # Public API: convert()
 ├── __main__.py          # CLI entry point (click)
 ├── core.py              # Core conversion logic
-├── db.py                # SQLite caption storage
+├── render_env.py        # Builds the Jinja env (filters/globals) shared by render and subdoc
+├── errors.py            # LaudoError & friends: user-facing errors (CLI prints them without traceback)
+├── docx_reference_replacer.py  # ${Label|ref} numbering (fast per-paragraph replace)
+├── db.py                # SQLite caption storage (bulk get_captions/set_captions)
 ├── assets.py            # Asset (image) handling
 ├── exif.py              # EXIF caption read/write (legacy)
 ├── images.py            # Image listing, thumbnails, reduced
@@ -62,6 +65,8 @@ my-report-template
 
 This would look for `my-report-template.docx` in `$LAUDOS_TEMPLATES_FOLDER`.
 
+4. **Built-in templates**: As a last resort, looks for `<name>.docx` in the package's own `src/laudo/templates/` folder (e.g. `image_group.docx`). This applies to every lookup via `get_template()`, including `subdoc(...)`.
+
 ## Context Building
 
 All data below is merged and passed to `docxtpl.DocxTemplate.render()`:
@@ -83,7 +88,8 @@ All data below is merged and passed to `docxtpl.DocxTemplate.render()`:
 - Images are wrapped in a `PicsContext` object injected as the `pics` context variable:
   - `.pics` — `list[dict]` of all images
   - `.pics_map` — `dict[str, dict]` keyed by `refname`
-  - `.all` — all images except those whose `refname` starts with `_`
+  - `.all()` — all images (use the `filter_dashes(list, "refname")` global to drop those starting with `_`)
+  - `.require(refname)` / `.require_group(name)` — like `get`/`group` but raise `ImageNotFoundError` with a helpful message
   - `.group(name)` — images in a given subfolder group
   - `.get(refname)` — single image dict by refname
   - `__bool__` — `True` when any images exist
