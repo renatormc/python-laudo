@@ -4,7 +4,7 @@ Escreva o laudo em **Markdown**, coloque as fotos numa pasta e receba um documen
 
 ## Instalação
 
-Você precisa do **Python 3.13+** e do **pipx** ([como instalar o pipx](https://github.com/renatormc/docmd/blob/main/docs/install-pipx.md)). Depois, execute:
+Você precisa do **Python 3.13+** e do **pipx** ([como instalar o pipx](https://github.com/renatormc/python-laudo/blob/main/docs/install-pipx.md)). Depois, execute:
 
 ```bash
 pipx install laudo
@@ -94,7 +94,7 @@ laudo init <nome-do-modelo>
 
 ## Documentação completa
 
-O [guia do usuário](https://github.com/renatormc/docmd/blob/main/docs/user-guide.md) cobre todo o resto: seções dentro dos arquivos `.md`, dados em `.json`, grupos de fotos no modelo, numeração de tabelas e figuras, modelos compartilhados e a lista completa de filtros e funções.
+O [guia do usuário](https://github.com/renatormc/python-laudo/blob/main/docs/user-guide.md) cobre todo o resto: seções dentro dos arquivos `.md`, dados em `.json`, grupos de fotos no modelo, numeração de tabelas e figuras, modelos compartilhados e a lista completa de filtros e funções.
 
 ## Licença
 

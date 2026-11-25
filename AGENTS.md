@@ -148,7 +148,7 @@ A PySide6 caption editor that displays all images from `fotos/` as thumbnails wi
 ## User documentation
 
 - User-facing documentation must be written in **Brazilian Portuguese (pt-BR)**: `README.md`, `docs/user-guide.md`, `docs/install-pipx.md` and any new file in `docs/`. Code, comments and this file stay in English.
-- `README.md` is also the PyPI page: keep it short (installation with `pipx install laudo`, quick start) and link to `docs/` with absolute URLs (`https://github.com/renatormc/docmd/blob/main/docs/...`); relative links break on PyPI.
+- `README.md` is also the PyPI page: keep it short (installation with `pipx install laudo`, quick start) and link to `docs/` with absolute URLs (`https://github.com/renatormc/python-laudo/blob/main/docs/...`); relative links break on PyPI.
 - When changing behavior (filters, globals, CLI options, markdown syntax), update `docs/user-guide.md` in the same change.
 
 ## Dependencies
